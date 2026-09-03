@@ -1,0 +1,13 @@
+字体说明
+================
+
+本项目使用系统自带中文字体栈，无需额外字体文件：
+
+font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+
+- Windows：微软雅黑（Microsoft YaHei）
+- macOS / iOS：苹方（PingFang SC）
+- Linux / Android：思源黑体（Noto Sans SC）
+
+如需特殊科技感字体（如 Orbitron 用于数字），可将字体文件放入本目录，
+在 css/style.css 中用 @font-face 声明后引用。

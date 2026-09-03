@@ -1,0 +1,228 @@
+// ============================================================
+// exhibits.js —— exhibits.json 的 file:// 协议回退镜像（自动生成）
+// 请勿直接编辑本文件；修改 data/exhibits.json 后运行：
+// node scripts/sync-exhibits.mjs
+// ============================================================
+window.EXHIBITS_DATA_FALLBACK =
+{
+  "exhibits": [
+    {
+      "id": "dongfanghong1",
+      "name": "东方红一号",
+      "tag": "卫星",
+      "era": "1970年",
+      "timeline_order": 1,
+      "position": [
+        0,
+        0,
+        -90
+      ],
+      "description": "中国第一颗人造地球卫星，标志中国成为全球第五个独立发射卫星的国家。",
+      "significance": "东方红一号的成功发射标志着中国进入太空时代，是中国航天事业的里程碑。卫星在太空中播放《东方红》乐曲，用无线电向全世界宣告中国航天的崛起。",
+      "model_path": "models/dongfanghong1.glb",
+      "scale": 15,
+      "glow_color": "#FF4500",
+      "interaction_distance": 18,
+      "ui_reveal_distance": 28
+    },
+    {
+      "id": "shenzhou5",
+      "name": "神舟五号",
+      "tag": "载人",
+      "era": "2003年",
+      "timeline_order": 2,
+      "position": [
+        3,
+        1,
+        -235
+      ],
+      "description": "航天员杨利伟乘坐，中国首次实现载人航天往返，成为全球第三个独立掌握载人航天技术的国家。",
+      "significance": "神舟五号的成功使中国成为继苏联/俄罗斯和美国之后，世界上第三个独立掌握载人航天技术的国家，标志着中国载人航天工程的第一步圆满完成。",
+      "model_path": "models/shenzhou5.glb",
+      "scale": 15,
+      "glow_color": "#1E90FF",
+      "interaction_distance": 18,
+      "ui_reveal_distance": 30
+    },
+    {
+      "id": "shenzhou7",
+      "name": "神舟七号",
+      "tag": "出舱",
+      "era": "2008年",
+      "timeline_order": 3,
+      "position": [
+        -4,
+        -1,
+        -380
+      ],
+      "description": "航天员翟志刚在此飞船上完成中国首次太空出舱活动（太空行走）。",
+      "significance": "神舟七号任务中，翟志刚身着中国自主研发的「飞天」舱外航天服，完成了约 20 分钟的舱外活动，使中国成为世界上第三个独立掌握出舱活动技术的国家。",
+      "model_path": "models/shenzhou7.glb",
+      "scale": 15,
+      "glow_color": "#00CED1",
+      "interaction_distance": 18,
+      "ui_reveal_distance": 30
+    },
+    {
+      "id": "tiangong1_shenzhou8",
+      "name": "天宫一号 + 神舟八号",
+      "tag": "交会对接",
+      "era": "2011年",
+      "timeline_order": 4,
+      "position": [
+        5,
+        2,
+        -525
+      ],
+      "description": "两者成功对接，突破并掌握了空间交会对接关键技术（后续神舟九号、十号又实现了载人对接）。",
+      "significance": "空间交会对接技术是建设空间站的前提条件。天宫一号与神舟八号的对接成功，使中国成为世界上第三个独立掌握交会对接技术的国家，为后续空间站建设奠定了关键基础。",
+      "model_path": "models/tiangong1_shenzhou8.glb",
+      "scale": 25,
+      "glow_color": "#9370DB",
+      "interaction_distance": 20,
+      "ui_reveal_distance": 34
+    },
+    {
+      "id": "change3",
+      "name": "嫦娥三号（玉兔号）",
+      "tag": "落月",
+      "era": "2013年",
+      "timeline_order": 5,
+      "position": [
+        -3,
+        -2,
+        -670
+      ],
+      "description": "中国航天器首次在地外天体（月球）实现软着陆和巡视勘察。",
+      "significance": "嫦娥三号携带「玉兔号」月球车，在月球虹湾地区成功软着陆，实现了中国地外天体探测零的突破，使中国成为第三个实现月球软着陆的国家。",
+      "model_path": "models/change3.glb",
+      "scale": 8,
+      "glow_color": "#FFD700",
+      "interaction_distance": 18,
+      "ui_reveal_distance": 30
+    },
+    {
+      "id": "tianwen1",
+      "name": "天问一号 + 祝融号",
+      "tag": "探火",
+      "era": "2021年",
+      "timeline_order": 7,
+      "position": [
+        4,
+        0,
+        -960
+      ],
+      "description": "一次性完成对火星的「绕、落、巡」三大目标，中国成为世界第二个成功着陆火星的国家。",
+      "significance": "天问一号任务一次性完成了火星环绕、着陆和巡视三大目标，这在全球航天史上尚属首次。祝融号火星车在乌托邦平原南部成功着陆并开展巡视探测，使中国成为第二个成功在火星表面运行巡视器的国家。",
+      "model_path": "models/tianwen1_only.glb",
+      "companion_model_path": "models/zhurong.glb",
+      "scale": 15,
+      "glow_color": "#FF6347",
+      "interaction_distance": 20,
+      "ui_reveal_distance": 34
+    },
+    {
+      "id": "change5",
+      "name": "嫦娥五号",
+      "tag": "采样（月球正面）",
+      "era": "2020年",
+      "timeline_order": 6,
+      "position": [
+        -5,
+        1,
+        -815
+      ],
+      "description": "成功从月球正面采样并带回 1731 克月壤样品，中国成为第三个实现月球采样返回的国家。",
+      "significance": "嫦娥五号完成了中国航天史上最为复杂的深空探测任务之一，包括月面着陆、采样、月面起飞、月球轨道交会对接和高速再入返回等多个高难度环节，为后续嫦娥六号月背采样积累了关键技术。",
+      "model_path": "models/change5.glb",
+      "scale": 15,
+      "glow_color": "#DAA520",
+      "interaction_distance": 18,
+      "ui_reveal_distance": 30
+    },
+    {
+      "id": "tianhe",
+      "name": "天和核心舱",
+      "tag": "建站（核心舱就位）",
+      "era": "2021年",
+      "timeline_order": 8,
+      "position": [
+        3,
+        -1,
+        -1105
+      ],
+      "description": "中国空间站首个舱段发射入轨，标志着空间站在轨组装建造全面展开。",
+      "significance": "天和核心舱是中国空间站的基础舱段，为航天员长期驻留提供保障，具备姿态控制、气闸舱功能和对接能力。它的成功发射标志着中国空间站工程进入全面实施阶段。",
+      "model_path": "models/tianhe.glb",
+      "scale": 35,
+      "glow_color": "#4169E1",
+      "interaction_distance": 20,
+      "ui_reveal_distance": 36
+    },
+    {
+      "id": "css_complete",
+      "name": "中国空间站（T字构型）",
+      "tag": "建站（全面建成）",
+      "era": "2022年",
+      "timeline_order": 9,
+      "position": [
+        -2,
+        2,
+        -1250
+      ],
+      "description": "「问天」实验舱与「梦天」实验舱相继对接，中国空间站「T」字基本构型完成，国家级太空实验室正式建成。",
+      "significance": "问天实验舱和梦天实验舱的相继对接，使中国空间站形成了由天和核心舱、问天实验舱、梦天实验舱组成的「T」字基本构型，标志着中国正式拥有长期在轨运行的国家级太空实验室，综合科学实验能力达到国际先进水平。",
+      "model_path": "models/css_complete.glb",
+      "scale": 40,
+      "glow_color": "#6A5ACD",
+      "interaction_distance": 22,
+      "ui_reveal_distance": 40
+    },
+    {
+      "id": "change6",
+      "name": "嫦娥六号",
+      "tag": "月背取样",
+      "era": "2024年",
+      "timeline_order": 10,
+      "position": [
+        0,
+        0,
+        -1395
+      ],
+      "description": "人类历史上首次从月球背面采样并返回地球，带回 1935.3 克珍贵月背样品，再创世界纪录。",
+      "significance": "嫦娥六号在月球背面南极-艾特肯盆地成功采样并安全返回，这是人类航天史上的里程碑事件。月背样品对于研究月球早期演化历史和太阳系起源具有不可替代的科学价值，彰显了中国航天的自主创新能力和对人类太空探索的重大贡献。",
+      "model_path": "models/change6.glb",
+      "scale": 15,
+      "glow_color": "#FF8C00",
+      "interaction_distance": 20,
+      "ui_reveal_distance": 32
+    }
+  ],
+  "settings": {
+    "route_layout_version": 2,
+    "route_start_z": 30,
+    "route_end_z": -1815,
+    "timeline_depth": 1545,
+    "future_beacon_gap": 150,
+    "future_beacon_position": [
+      0,
+      0,
+      -1545
+    ],
+    "route_tail_depth": 270,
+    "wormhole_center_z": -892.5,
+    "wormhole_length": 1845,
+    "wormhole_radius": 30,
+    "flight_radius": 24,
+    "flight_z_min": -1625,
+    "flight_z_max": 25,
+    "default_interaction_distance": 18,
+    "default_ui_reveal_distance": 30,
+    "move_speed": 18,
+    "boost_speed": 45,
+    "camera_distance": 10,
+    "star_count": 5000,
+    "timeline_line_color": "#4488FF"
+  }
+}
+;

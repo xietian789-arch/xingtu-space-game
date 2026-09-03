@@ -1,0 +1,13 @@
+贴图资源说明
+================
+
+当前版本所有视觉效果均为程序化生成，本目录暂无贴图文件：
+- 星空：THREE.Points 粒子（js/SpaceEnvironment.js）
+- 星云：Canvas 径向渐变动态生成的 CanvasTexture
+- 发光：MeshStandardMaterial emissive 自发光，无需贴图
+
+后续如需真实天空盒 / 星云贴图：
+1. 将贴图（建议 2 的幂次尺寸，如 1024x1024 / 2048x2048）放入本目录。
+2. 在 SpaceEnvironment.js 中使用 THREE.TextureLoader 加载，
+   立方体天空盒可使用 THREE.CubeTextureLoader 并赋值给 scene.background。
+3. 加载的贴图请设置 texture.colorSpace = THREE.SRGBColorSpace 以保证色彩正确。
