@@ -21,13 +21,17 @@ class ExhibitManager {
     this.asteroidModel = null;
     /** @type {boolean} 陨石模型是否已加载完成 */
     this.asteroidModelLoaded = false;
-    
-    // 预加载陨石GLB模型
-    this._loadAsteroidModel();
+    /** @type {boolean} 陨石模型是否已开始加载（避免重复触发） */
+    this.asteroidModelLoading = false;
+    /** @type {Array} 陨石懒加载区域 */
+    this.asteroidZones = [];
   }
 
-  /** 预加载陨石GLB模型 */
-  _loadAsteroidModel() {
+  /** 触发陨石GLB模型懒加载（玩家靠近时调用） */
+  _triggerAsteroidLoad() {
+    if (this.asteroidModelLoading || this.asteroidModelLoaded) return;
+    this.asteroidModelLoading = true;
+    console.info('[ExhibitManager] 玩家接近陨石区域，开始加载陨石模型…');
     gltfLoader.load(
       'models/asteroid.glb',
       (gltf) => {
@@ -55,21 +59,24 @@ class ExhibitManager {
     
     exhibits.forEach((data) => this.buildExhibit(data));
     
-    // 等待陨石模型加载完成后添加陨石（最多等待3秒）
-    this._waitForAsteroidModelAndBuild(exhibits);
+    // 计算陨石懒加载区域（代表物之间的中段位置）
+    this._buildAsteroidZones(exhibits);
+    // 先用简单几何体快速填充陨石，不等 GLB 下载
+    this._addAsteroidsBetweenExhibits(exhibits);
+    this._addAsteroidsBeforeFirstExhibit();
   }
   
-  /** 等待陨石模型加载后构建陨石 */
-  _waitForAsteroidModelAndBuild(exhibits, retries = 0) {
-    if (this.asteroidModelLoaded || retries > 60) {
-      // 模型已加载或超时，直接构建
-      this._addAsteroidsBetweenExhibits(exhibits);
-      this._addAsteroidsBeforeFirstExhibit();
-    } else {
-      // 每50ms检查一次，最多等待3秒（60次）
-      setTimeout(() => {
-        this._waitForAsteroidModelAndBuild(exhibits, retries + 1);
-      }, 50);
+  /** 计算陨石懒加载区域（相邻代表物中点） */
+  _buildAsteroidZones(exhibits) {
+    this.asteroidZones = [];
+    const sorted = [...exhibits].sort((a, b) => (a.position[2] || 0) - (b.position[2] || 0));
+    if (sorted.length > 0) {
+      this.asteroidZones.push(new Vector3(0, 0, (sorted[0].position[2] || 0) / 2));
+    }
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const z1 = sorted[i].position[2];
+      const z2 = sorted[i + 1].position[2];
+      this.asteroidZones.push(new Vector3(0, 0, (z1 + z2) / 2));
     }
   }
 
@@ -309,6 +316,17 @@ class ExhibitManager {
     return this.asteroids;
   }
 
+  /** 距离触发陨石GLB懒加载 */
+  _checkAsteroidLazyLoad(playerPosition) {
+    if (this.asteroidModelLoaded || this.asteroidModelLoading) return;
+    for (const zone of this.asteroidZones) {
+      if (playerPosition.distanceTo(zone) < 250) {
+        this._triggerAsteroidLoad();
+        return;
+      }
+    }
+  }
+
   /**
    * 构建单个代表物
    * @param {Object} data exhibits.json 中的一条记录
@@ -373,29 +391,8 @@ class ExhibitManager {
     // ---- 占位模型 ----
     this._buildPlaceholder(data, modelGroup, { metal, panel, dark }, materials);
 
-    // 若配置了 model_path，尝试加载真实 .glb 替换占位模型
-    if (data.model_path) {
-      this._tryLoadGltf(
-        data.model_path,
-        modelGroup,
-        materials,
-        data.model_chunks,
-        data.companion_model_path,
-        () => {
-          // 真实模型就位后，把标签移到模型视觉中心正上方，
-          // 避免 GLB 原点不居中时标签悬在飞行器旁边。
-          const rec = this.records.get(data.id);
-          if (!rec) return;
-          const c = rec.modelGroup.userData.uiCenter;
-          const topY = rec.modelGroup.userData.uiTopY;
-          if (c && isFinite(topY)) {
-            rec.labelObj.position.set(c.x, topY + 1.1, c.z);
-          }
-          // 真实模型的材质重新注入边缘光（占位模型的旧材质已随模型移除）
-          this._attachRimLight(rec, new Color(rec.data.glow_color || '#4488FF'));
-        }
-      );
-    }
+    // GLB 模型延迟到玩家靠近时再加载（懒加载），减少初始网络压力
+    // model_path / companion_model_path 记录在 rec.data 中，由 update() 距离触发
 
     // ---- 局部光源 ----
     const light = new PointLight(glowColor, 0.78, 24, 1.8);
@@ -432,6 +429,9 @@ class ExhibitManager {
       labelObj,
       phase: Math.random() * Math.PI * 2, // 呼吸灯随机相位
       highlight: false,
+      glbTriggered: false,
+      glbLoaded: false,
+      companionPath: data.companion_model_path || '',
     };
     this.records.set(data.id, rec);
 
@@ -899,6 +899,38 @@ class ExhibitManager {
     this._frameTick = (this._frameTick || 0) + 1;
     const updateMaterials = (this._frameTick % 3 === 0);
     const frame = dt * 60;
+
+    // ---- 距离触发式懒加载：玩家靠近时才下载 GLB 模型 ----
+    if (playerPosition) {
+      this._checkAsteroidLazyLoad(playerPosition);
+      for (const rec of this.records.values()) {
+        if (rec.glbLoaded || rec.glbTriggered) continue;
+        if (!rec.data.model_path) continue;
+        const dist = playerPosition.distanceTo(rec.root.position);
+        if (dist < 150) {
+          rec.glbTriggered = true;
+          console.info(`[ExhibitManager] 玩家接近 ${rec.data.name}（${dist.toFixed(0)}u），开始加载 GLB…`);
+          this._tryLoadGltf(
+            rec.data.model_path,
+            rec.modelGroup,
+            rec.materials,
+            rec.data.model_chunks,
+            rec.companionPath,
+            () => {
+              rec.glbLoaded = true;
+              const r = this.records.get(rec.data.id);
+              if (!r) return;
+              const c = r.modelGroup.userData.uiCenter;
+              const topY = r.modelGroup.userData.uiTopY;
+              if (c && isFinite(topY)) {
+                r.labelObj.position.set(c.x, topY + 1.1, c.z);
+              }
+              this._attachRimLight(r, new Color(r.data.glow_color || '#4488FF'));
+            }
+          );
+        }
+      }
+    }
 
     for (const rec of this.records.values()) {
       // 持续缓慢自转
