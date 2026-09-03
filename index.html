@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>星途 —— 中国航空航天成果沉浸式科普体验</title>
-  <meta name="description" content="星途：中国航天发展史互动科普 3D 网页游戏 —— 操控宇航员穿越 1970 至 2024 年的中国航天里程碑。" />
+  <title>星�?—�?中国航空航天成果沉浸式科普体�?/title>
+  <meta name="description" content="星途：中国航天发展史互动科�?3D 网页游戏 —�?操控宇航员穿�?1970 �?2024 年的中国航天里程碑�? />
   <link rel="preload" as="image" href="textures/home-layers/space-background.png" fetchpriority="high" />
   <link rel="preload" as="video" href="media/launch-transition-smooth.mp4" type="video/mp4" />
   <link rel="preload" as="video" href="media/ending-cinematic.mp4" type="video/mp4" />
@@ -13,16 +13,11 @@
 
   <!--
     经典脚本引入（适配 file:// 协议）：
-    双击 index.html 即可运行，无需本地服务器。
-    如需改回 ES Module 模式，请恢复 importmap 并将 .classic.js 换回原 .js 文件。
-  -->
+    双击 index.html 即可运行，无需本地服务器�?    如需改回 ES Module 模式，请恢复 importmap 并将 .classic.js 换回�?.js 文件�?  -->
 
   <!--
-    data/exhibits.js 是 exhibits.json 的「file:// 回退镜像」：
-    浏览器直接双击打开 index.html（file:// 协议）时 fetch 本地 JSON 会被 CORS 拦截，
-    此经典脚本将同一份数据挂到 window 上供 GameData.js 回退使用。
-    通过本地服务器（http://）运行时则以 exhibits.json 为准。
-  -->
+    data/exhibits.js �?exhibits.json 的「file:// 回退镜像」：
+    浏览器直接双击打开 index.html（file:// 协议）时 fetch 本地 JSON 会被 CORS 拦截�?    此经典脚本将同一份数据挂�?window 上供 GameData.js 回退使用�?    通过本地服务器（http://）运行时则以 exhibits.json 为准�?  -->
   <script src="data/exhibits.js"></script>
 </head>
 <body>
@@ -89,15 +84,15 @@
         <b></b>
         <span>航天时序档案</span>
       </div>
-      <p class="start-subtitle">中国航空航天成果沉浸式科普体验</p>
-      <button class="start-btn" id="start-btn" type="button" aria-label="开始航行，进入中国航天史互动游戏">开始航行</button>
+      <p class="start-subtitle">中国航空航天成果沉浸式科普体�?/p>
+      <button class="start-btn" id="start-btn" type="button" aria-label="开始航行，进入中国航天史互动游�?>开始航�?/button>
       <p class="start-hint">点击进入 · ESC 暂停</p>
     </main>
 
     <div id="home-motion-status" class="home-motion-status" role="status" aria-live="polite"></div>
   </div>
 
-  <!-- ===================== 点击开始后的启航过场 ===================== -->
+  <!-- ===================== 点击开始后的启航过�?===================== -->
   <div id="launch-cinematic" class="launch-cinematic hidden" aria-hidden="true">
     <video
       id="launch-video"
@@ -124,7 +119,7 @@
       <div class="launch-loader">
         <div class="launch-loader__meta" data-loader-part>XING TU / LOADING</div>
         <div class="launch-loader__headline" data-loader-part>
-          <p>从仰望星空，到奔赴星辰</p>
+          <p>从仰望星空，到奔赴星�?/p>
           <output id="launch-loader-progress" aria-hidden="true">0%</output>
         </div>
         <div class="launch-loader__orbit" aria-hidden="true">
@@ -175,7 +170,7 @@
         <div class="pause-audio__controls">
           <button id="music-toggle" class="music-toggle" type="button" role="switch" aria-checked="true">
             <span class="music-toggle__track" aria-hidden="true"><i></i></span>
-            <span id="music-toggle-label">音乐开启</span>
+            <span id="music-toggle-label">音乐开�?/span>
           </button>
           <label class="music-volume" for="music-volume">
             <span>音量</span>
@@ -188,10 +183,10 @@
       <div class="pause-controls">
         <span><kbd>WASD</kbd> 前后左右</span>
         <span><kbd>SPACE</kbd> 上升 · <kbd>CTRL</kbd> 下降</span>
-        <span><kbd>SHIFT</kbd> 加速</span>
+        <span><kbd>SHIFT</kbd> 加�?/span>
         <span><kbd>V</kbd> 视角</span>
       </div>
-      <div class="pause-foot"><span></span><small>选择“返回首页”才会退出当前航行</small></div>
+      <div class="pause-foot"><span></span><small>选择“返回首页”才会退出当前航�?/small></div>
     </div>
   </div>
 
@@ -202,7 +197,7 @@
       <span class="crosshair-dot"></span>
     </div>
 
-    <!-- 十套航天器专属靠近 UI：轨道结构、玻璃信息舱与实时交互信息 -->
+    <!-- 十套航天器专属靠�?UI：轨道结构、玻璃信息舱与实时交互信�?-->
     <div id="interact-prompt" class="hidden" data-variant="v01" data-ready="false" role="status" aria-live="polite" aria-hidden="true">
       <div class="proximity-stage">
         <div class="proximity-orbit-field" aria-hidden="true">
@@ -226,13 +221,13 @@
         <div class="proximity-card">
           <div class="proximity-card__topline">
             <span id="prompt-index" class="proximity-index">01</span>
-            <span class="proximity-status"><i></i>目标已识别</span>
+            <span class="proximity-status"><i></i>目标已识�?/span>
           </div>
-          <div id="prompt-name" class="proximity-name">东方红一号</div>
+          <div id="prompt-name" class="proximity-name">东方红一�?/div>
           <div class="proximity-meta">
             <span id="prompt-era">1970</span>
             <span class="proximity-meta__divider"></span>
-            <span id="prompt-tag">人造卫星</span>
+            <span id="prompt-tag">人造卫�?/span>
           </div>
         </div>
 
@@ -261,7 +256,7 @@
       <div class="future-beacon-card">
         <div class="future-beacon-card__eyebrow"><i></i><span>FINAL COORDINATE</span><b>END / 10</b></div>
         <h2>未来航标</h2>
-        <div class="future-beacon-card__status"><span></span><strong id="future-beacon-status">航标信号已捕获</strong></div>
+        <div class="future-beacon-card__status"><span></span><strong id="future-beacon-status">航标信号已捕�?/strong></div>
         <div class="future-beacon-card__distance"><small>目标距离</small><b id="future-beacon-distance">--.- m</b></div>
         <div class="future-beacon-card__sync" aria-hidden="true">
           <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
@@ -275,11 +270,11 @@
       </div>
     </div>
 
-    <!-- 左上角：当前年代指示器 -->
+    <!-- 左上角：当前年代指示�?-->
     <div id="era-indicator">
       <div class="era-label"><i></i><span>当前航段</span><small>FLIGHT SEGMENT</small></div>
       <div class="era-value" id="era-value">起点 · 等待启航</div>
-      <div class="era-status"><span></span>航线同步中</div>
+      <div class="era-status"><span></span>航线同步�?/div>
     </div>
 
     <!-- 左下角：操作提示面板 -->
@@ -288,7 +283,7 @@
       <div class="controls-grid">
         <span><kbd>WASD</kbd> 前后左右</span>
         <span><kbd>SPACE</kbd> 上升 <kbd>CTRL</kbd> 下降</span>
-        <span><kbd>SHIFT</kbd> 加速</span>
+        <span><kbd>SHIFT</kbd> 加�?/span>
         <span><kbd>V</kbd> 视角</span>
         <span><kbd>F</kbd> 档案</span>
         <span><kbd>ESC</kbd> 暂停</span>
@@ -309,7 +304,7 @@
           <div class="timeline-fill" id="timeline-fill"></div>
           <div class="timeline-dot" id="timeline-dot"></div>
         </div>
-        <div class="timeline-nodes" id="timeline-nodes" role="list"><!-- JS 动态生成 --></div>
+        <div class="timeline-nodes" id="timeline-nodes" role="list"><!-- JS 动态生�?--></div>
       </div>
       <div class="timeline-foot">
         <span><i></i>当前航段</span>
@@ -318,7 +313,7 @@
     </div>
   </div>
 
-  <!-- ===================== 穿越航标与任务完成 ===================== -->
+  <!-- ===================== 穿越航标与任务完�?===================== -->
   <div id="beacon-transit" class="beacon-transit hidden" aria-hidden="true">
     <span class="beacon-transit__ring beacon-transit__ring--a"></span>
     <span class="beacon-transit__ring beacon-transit__ring--b"></span>
@@ -332,32 +327,32 @@
       <span class="mission-complete__corner mission-complete__corner--tr" aria-hidden="true"></span>
       <span class="mission-complete__corner mission-complete__corner--br" aria-hidden="true"></span>
       <span class="mission-complete__corner mission-complete__corner--bl" aria-hidden="true"></span>
-      <div class="mission-complete__eyebrow"><i></i><span>MISSION COMPLETE</span><b>1970—2024</b></div>
+      <div class="mission-complete__eyebrow"><i></i><span>MISSION COMPLETE</span><b>1970�?024</b></div>
       <div class="mission-complete__index" aria-hidden="true">10 / 10</div>
-      <h2 id="mission-complete-title">探索，才刚刚开始</h2>
-      <p>你已穿越中国航天的十个重要坐标。从东方红一号的乐音到深空的未来航标，星辰大海仍在前方——中国对宇宙的探索，才刚刚开始。</p>
+      <h2 id="mission-complete-title">探索，才刚刚开�?/h2>
+      <p>你已穿越中国航天的十个重要坐标。从东方红一号的乐音到深空的未来航标，星辰大海仍在前方——中国对宇宙的探索，才刚刚开始�?/p>
       <div class="mission-complete__rule"><span></span><i></i><span></span></div>
       <button id="mission-home-btn" class="mission-complete__action" type="button">
         <span>返回首页</span><small>RETURN TO HOME</small><i aria-hidden="true"></i>
       </button>
-      <p class="mission-complete__esc" aria-hidden="true">按 <kbd>ESC</kbd> 退出确认</p>
+      <p class="mission-complete__esc" aria-hidden="true">�?<kbd>ESC</kbd> 退出确�?/p>
     </div>
   </div>
 
-  <!-- ===================== 终点视频（抵达航标后按 F 播放） ===================== -->
+  <!-- ===================== 终点视频（抵达航标后�?F 播放�?===================== -->
   <div id="ending-video-overlay" class="ending-video-overlay hidden" aria-hidden="true">
     <video id="ending-video" preload="auto" playsinline aria-label="终点过场视频">
       <source src="media/ending-cinematic.mp4" type="video/mp4" />
     </video>
   </div>
 
-  <!-- ===================== 结尾页：返回主页确认弹窗（ESC 唤起 / 再按 ESC 关闭） ===================== -->
+  <!-- ===================== 结尾页：返回主页确认弹窗（ESC 唤起 / 再按 ESC 关闭�?===================== -->
   <div id="ending-confirm-overlay" class="ending-confirm hidden" aria-hidden="true">
     <div class="ending-confirm__dialog" role="dialog" aria-modal="true" aria-labelledby="ending-confirm-title">
       <h3 id="ending-confirm-title">返回主页</h3>
-      <p>本次航行将结束，确定要返回主页吗？</p>
+      <p>本次航行将结束，确定要返回主页吗�?/p>
       <div class="ending-confirm__actions">
-        <button id="ending-stay-btn" class="ending-confirm__btn ending-confirm__btn--ghost" type="button">再看看</button>
+        <button id="ending-stay-btn" class="ending-confirm__btn ending-confirm__btn--ghost" type="button">再看�?/button>
         <button id="ending-home-confirm-btn" class="ending-confirm__btn ending-confirm__btn--primary" type="button">返回主页</button>
       </div>
       <small class="ending-confirm__esc" aria-hidden="true">再按 <kbd>ESC</kbd> 关闭</small>
@@ -368,7 +363,7 @@
   <div id="wormhole-editor" class="wormhole-editor hidden">
     <div class="wormhole-editor-header">
       <span class="wormhole-editor-title">虫洞调节</span>
-      <button class="wormhole-editor-close" id="wormhole-close-btn" title="关闭">✕</button>
+      <button class="wormhole-editor-close" id="wormhole-close-btn" title="关闭">�?/button>
     </div>
     <div class="wormhole-editor-body">
       <div class="wormhole-section">
@@ -378,27 +373,27 @@
         <div class="wormhole-row"><label>Z</label><input type="range" id="wh-pos-z" min="-1800" max="200" step="5" value="-892.5"><span class="wormhole-val" id="wh-pos-z-val">-892.5</span></div>
       </div>
       <div class="wormhole-section">
-        <div class="wormhole-section-title">旋转（度）</div>
+        <div class="wormhole-section-title">旋转（度�?/div>
         <div class="wormhole-row"><label>X</label><input type="range" id="wh-rot-x" min="-180" max="180" step="1" value="90"><span class="wormhole-val" id="wh-rot-x-val">90</span></div>
         <div class="wormhole-row"><label>Y</label><input type="range" id="wh-rot-y" min="-180" max="180" step="1" value="0"><span class="wormhole-val" id="wh-rot-y-val">0</span></div>
         <div class="wormhole-row"><label>Z</label><input type="range" id="wh-rot-z" min="-180" max="180" step="1" value="0"><span class="wormhole-val" id="wh-rot-z-val">0</span></div>
       </div>
       <div class="wormhole-section">
         <div class="wormhole-section-title">缩放</div>
-        <div class="wormhole-row"><label>统</label><input type="range" id="wh-scale" min="0.1" max="5" step="0.05" value="1"><span class="wormhole-val" id="wh-scale-val">1.00</span></div>
+        <div class="wormhole-row"><label>�?/label><input type="range" id="wh-scale" min="0.1" max="5" step="0.05" value="1"><span class="wormhole-val" id="wh-scale-val">1.00</span></div>
         <div class="wormhole-row"><label>X</label><input type="range" id="wh-scale-x" min="0.1" max="5" step="0.05" value="1"><span class="wormhole-val" id="wh-scale-x-val">1.00</span></div>
         <div class="wormhole-row"><label>Y</label><input type="range" id="wh-scale-y" min="0.1" max="5" step="0.05" value="1"><span class="wormhole-val" id="wh-scale-y-val">1.00</span></div>
         <div class="wormhole-row"><label>Z</label><input type="range" id="wh-scale-z" min="0.1" max="5" step="0.05" value="1"><span class="wormhole-val" id="wh-scale-z-val">1.00</span></div>
       </div>
       <div class="wormhole-section">
         <div class="wormhole-section-title">飞行边界</div>
-        <div class="wormhole-row"><label>径</label><input type="range" id="wh-radius" min="10" max="80" step="1" value="30"><span class="wormhole-val" id="wh-radius-val">30</span></div>
+        <div class="wormhole-row"><label>�?/label><input type="range" id="wh-radius" min="10" max="80" step="1" value="30"><span class="wormhole-val" id="wh-radius-val">30</span></div>
       </div>
       <button class="wormhole-reset-btn" id="wh-reset-btn">重置默认</button>
     </div>
   </div>
 
-  <!-- ===================== 代表物详情面板 ===================== -->
+  <!-- ===================== 代表物详情面�?===================== -->
   <div id="info-panel" class="panel-mask hidden" aria-hidden="true">
     <div class="info-card" data-variant="v01" role="dialog" aria-modal="true" aria-labelledby="info-name">
       <span class="info-frame-corner info-frame-corner--tl" aria-hidden="true"></span>
@@ -406,7 +401,7 @@
       <span class="info-frame-corner info-frame-corner--br" aria-hidden="true"></span>
       <span class="info-frame-corner info-frame-corner--bl" aria-hidden="true"></span>
 
-      <button class="info-close" id="info-close-btn" type="button" title="关闭详情页">
+      <button class="info-close" id="info-close-btn" type="button" title="关闭详情�?>
         <span class="info-close__icon" aria-hidden="true"></span>
         <span>关闭</span>
       </button>
@@ -423,7 +418,7 @@
             <span id="info-index" class="info-index">01</span>
             <span class="info-index-total">/ 10</span>
           </div>
-          <h2 class="info-name" id="info-name" data-outline="代表物名称">代表物名称</h2>
+          <h2 class="info-name" id="info-name" data-outline="代表物名�?>代表物名�?/h2>
           <div class="info-meta">
             <span class="info-era" id="info-era">年代</span>
             <span class="info-meta__line"></span>
@@ -434,7 +429,7 @@
         <div class="info-body">
           <section class="info-section info-section--intro">
             <div class="info-section__heading">
-              <span>任务简介</span>
+              <span>任务简�?/span>
               <small>MISSION PROFILE</small>
             </div>
             <p class="info-desc" id="info-desc">描述内容</p>
@@ -452,7 +447,7 @@
               <small>SCIENCE NOTE</small>
             </div>
             <p id="info-science">科普内容</p>
-            <div class="info-keywords" id="info-keywords" aria-label="相关知识点"></div>
+            <div class="info-keywords" id="info-keywords" aria-label="相关知识�?></div>
           </section>
         </div>
 
@@ -470,14 +465,14 @@
           <span class="info-orbit-node info-orbit-node--b"></span>
         </div>
 
-        <!-- 真实 GLB 模型挂载点；模型加载失败时保留轻量 SVG 科普插画。 -->
+        <!-- 真实 GLB 模型挂载点；模型加载失败时保留轻�?SVG 科普插画�?-->
         <div id="info-model-mount" class="info-model-mount" data-exhibit-id="" aria-label="任务三维模型">
           <div class="info-model-placeholder info-illustration-shell">
             <span class="info-illustration-kicker">MISSION SKETCH</span>
             <svg id="info-illustration" class="info-illustration-svg" viewBox="0 0 480 320" aria-hidden="true"></svg>
             <div class="info-illustration-caption">
               <strong id="info-illustration-title">任务示意</strong>
-              <small id="info-illustration-note">非等比概念插图</small>
+              <small id="info-illustration-note">非等比概念插�?/small>
             </div>
           </div>
           <div id="info-model-status" class="info-model-status" role="status" aria-live="polite">
@@ -503,20 +498,20 @@
 
   <!-- ===================== 游戏内编辑面板（浮动侧边栏） ===================== -->
   <div id="editor-panel" class="editor-float hidden">
-    <!-- 右侧浮动属性面板 -->
+    <!-- 右侧浮动属性面�?-->
     <div class="editor-sidebar">
       <div class="editor-sidebar-header">
-        <span class="editor-sidebar-title">属性</span>
-        <button class="editor-sidebar-close" id="editor-close-btn" title="关闭编辑器 (Tab)">✕</button>
+        <span class="editor-sidebar-title">属�?/span>
+        <button class="editor-sidebar-close" id="editor-close-btn" title="关闭编辑�?(Tab)">�?/button>
       </div>
 
-      <!-- 工具栏 -->
+      <!-- 工具�?-->
       <div class="editor-toolbar-compact">
         <button class="tool-btn" id="editor-save" title="保存修改">💾</button>
-        <button class="tool-btn" id="editor-add" title="新增代表物">＋</button>
-        <button class="tool-btn tool-btn-danger" id="editor-delete" title="删除代表物">🗑</button>
-        <button class="tool-btn" id="editor-reload" title="重新加载">↻</button>
-        <button class="tool-btn tool-btn-primary" id="editor-export" title="导出 JSON">↓</button>
+        <button class="tool-btn" id="editor-add" title="新增代表�?>�?/button>
+        <button class="tool-btn tool-btn-danger" id="editor-delete" title="删除代表�?>🗑</button>
+        <button class="tool-btn" id="editor-reload" title="重新加载">�?/button>
+        <button class="tool-btn tool-btn-primary" id="editor-export" title="导出 JSON">�?/button>
         <span class="toolbar-separator"></span>
         <button class="tool-btn transform-btn transform-btn-wide active" data-mode="translate" title="移动 (W)">移动</button>
         <button class="tool-btn transform-btn transform-btn-wide" data-mode="rotate" title="旋转 (E)">旋转</button>
@@ -548,7 +543,7 @@
         </div>
 
         <div class="props-section">
-          <div class="props-section-title">变换 <span class="props-hint">拖拽Gizmo或输入数值</span></div>
+          <div class="props-section-title">变换 <span class="props-hint">拖拽Gizmo或输入数�?/span></div>
           <div class="prop-row">
             <label>位置</label>
             <div class="prop-xyz">
@@ -581,7 +576,7 @@
         </div>
 
         <div class="props-section">
-          <div class="props-section-title">交互与外观</div>
+          <div class="props-section-title">交互与外�?/div>
           <div class="prop-row">
             <label>交互距离</label>
             <input type="number" step="0.5" min="1" id="f-distance" />
@@ -603,12 +598,12 @@
           </div>
           <div class="prop-row model-progress-row hidden" id="model-progress-row">
             <div class="model-progress-bar"><div class="model-progress-fill" id="model-progress-fill"></div></div>
-            <span class="model-progress-text" id="model-progress-text">准备中…</span>
+            <span class="model-progress-text" id="model-progress-text">准备中�?/span>
           </div>
         </div>
 
         <div class="props-section">
-          <div class="props-section-title">描述与意义</div>
+          <div class="props-section-title">描述与意�?/div>
           <div class="prop-row">
             <label>描述</label>
             <textarea id="f-desc" rows="3"></textarea>
@@ -622,50 +617,50 @@
       </div>
 
       <div class="editor-footer">
-        <span id="editor-dirty" class="dirty-mark hidden">● 未保存</span>
+        <span id="editor-dirty" class="dirty-mark hidden">�?未保�?/span>
         <span class="editor-hint">Tab 关闭 · 点击场景选中</span>
       </div>
     </div>
 
     <!-- 底部代表物列表条 -->
     <div class="editor-bottom-bar">
-      <div class="bottom-bar-list" id="editor-list"><!-- JS 动态生成 --></div>
+      <div class="bottom-bar-list" id="editor-list"><!-- JS 动态生�?--></div>
     </div>
   </div>
 
-  <!-- ===================== 底部提示条（编辑器保存等反馈） ===================== -->
+  <!-- ===================== 底部提示条（编辑器保存等反馈�?===================== -->
   <div id="toast" class="hidden"></div>
 
-  <!-- ===================== 经典脚本（按依赖顺序加载） ===================== -->
-  <!-- 首页 2.5D 分层动效与启航过场 -->
+  <!-- ===================== 经典脚本（按依赖顺序加载�?===================== -->
+  <!-- 首页 2.5D 分层动效与启航过�?-->
   <script src="vendor/gsap.min.js"></script>
   <script src="js/HomeIntro.classic.js?v=home-depth-20260821"></script>
   <script src="js/LaunchCinematic.classic.js?v=launch-loader-20260830"></script>
 
-  <!-- 1. Three.js 核心（UMD 版本，设置 window.THREE） -->
+  <!-- 1. Three.js 核心（UMD 版本，设�?window.THREE�?-->
   <script src="vendor/three-umd.js"></script>
 
-  <!-- 2. Vendor addons（经典脚本版本，挂载到 THREE 命名空间） -->
+  <!-- 2. Vendor addons（经典脚本版本，挂载�?THREE 命名空间�?-->
   <script src="vendor/addons/utils/BufferGeometryUtils.classic.js"></script>
   <script src="vendor/addons/loaders/GLTFLoader.classic.js"></script>
   <script src="vendor/addons/renderers/CSS2DRenderer.classic.js"></script>
   <script src="vendor/addons/controls/PointerLockControls.classic.js"></script>
   <script src="vendor/addons/controls/TransformControls.classic.js"></script>
 
-  <!-- 3. 游戏模块（按依赖顺序，挂载到 XINGTU 命名空间） -->
+  <!-- 3. 游戏模块（按依赖顺序，挂载到 XINGTU 命名空间�?-->
   <script>window.XINGTU = {};</script>
-  <script src="js/ModelLibrary.classic.js?v=detail-models-20260830"></script>
+  <script src="js/ModelLibrary.classic.js?v=cdn-jsdelivr-20260904"></script>
   <script src="js/GameData.classic.js?v=aurora-depth-v8-20260830"></script>
   <script src="js/SpaceEnvironment.classic.js?v=route-dust-v35-20260831"></script>
   <script src="js/FutureBeacon.classic.js?v=aurora-depth-v8-20260830"></script>
   <script src="js/GameplayMusic.classic.js?v=bgm-webm-v24-20260831"></script>
   <script src="js/TimelineFluid.classic.js"></script>
 
-  <!-- GitHub Pages / 本地 HTTP 环境直接加载 models/*.glb，避免重复的 base64 资源。 -->
+  <!-- GitHub Pages / 本地 HTTP 环境直接加载 models/*.glb，避免重复的 base64 资源�?-->
 
   <script src="js/AstronautController.classic.js?v=follow-view-v21-20260831"></script>
   <script src="js/CameraController.classic.js"></script>
-  <script src="js/ExhibitManager.classic.js?v=controls-v20-20260831"></script>
+  <script src="js/ExhibitManager.classic.js?v=cdn-jsdelivr-20260904"></script>
   <script src="js/InteractionSystem.classic.js?v=bright-space-v15-20260831"></script>
   <script src="js/HUD.classic.js?v=bright-space-v15-20260831"></script>
   <script src="js/InfoPanel.classic.js?v=detail-illustrations-20260830"></script>
@@ -677,10 +672,7 @@
   <script src="js/main.classic.js?v=ending-smooth-v36-20260831"></script>
 
   <!--
-    加载诊断（经典内联脚本）：
-    若 4.5 秒后主模块仍未就绪，说明脚本没跑起来，
-    此时把启动按钮换成故障说明，避免「点了没反应」。
-  -->
+    加载诊断（经典内联脚本）�?    �?4.5 秒后主模块仍未就绪，说明脚本没跑起来�?    此时把启动按钮换成故障说明，避免「点了没反应」�?  -->
   <script>
     (function () {
       var checked = false;
@@ -691,16 +683,16 @@
         var btn = document.getElementById('start-btn');
         var hint = document.querySelector('.start-hint');
         if (btn) {
-          btn.textContent = '脚 本 未 加 载';
+          btn.textContent = '�?�?�?�?�?;
           btn.style.borderColor = 'rgba(255, 90, 110, 0.7)';
           btn.style.color = '#ff8b9a';
           btn.style.cursor = 'not-allowed';
         }
         if (hint) {
           hint.innerHTML =
-            '游戏脚本未能启动。请按 F12 打开控制台查看红色报错信息。<br />' +
-            '常见原因：浏览器版本过低或不支持所需 API。<br />' +
-            '也可尝试双击 <b>启动游戏.bat</b> 通过本地服务器运行。';
+            '游戏脚本未能启动。请�?F12 打开控制台查看红色报错信息�?br />' +
+            '常见原因：浏览器版本过低或不支持所需 API�?br />' +
+            '也可尝试双击 <b>启动游戏.bat</b> 通过本地服务器运行�?;
           hint.style.color = '#f0a0a8';
           hint.style.lineHeight = '2';
         }
