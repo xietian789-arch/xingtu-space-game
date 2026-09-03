@@ -19,7 +19,7 @@ function resolveModelPath(path) {
   if (loc.hostname.indexOf('github.io') !== -1) {
     var m = loc.pathname.match(/^\/([^/]+)\//);
     if (m) {
-      return 'https://cdn.jsdelivr.net/gh/' + loc.hostname.replace('.github.io', '') + '/' + m[1] + '@main/' + path;
+      return 'https://cdn.jsdelivr.net/gh/' + loc.hostname.replace('.github.io', '') + '/' + m[1] + '@main/' + path + '?v=draco-20260904';
     }
   }
   return path;

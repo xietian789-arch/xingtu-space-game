@@ -32,7 +32,7 @@ class ExhibitManager {
     if (this.asteroidModelLoading || this.asteroidModelLoaded) return;
     this.asteroidModelLoading = true;
     console.info('[ExhibitManager] 玩家接近陨石区域，开始加载陨石模型…');
-    var asteroidUrl = XINGTU.resolveModelPath ? XINGTU.resolveModelPath('models/asteroid.glb') : 'models/asteroid.glb';
+    var asteroidUrl = XINGTU.resolveModelPath ? XINGTU.resolveModelPath('models/asteroid.glb') + '&t=1' : 'models/asteroid.glb';
     gltfLoader.load(
       asteroidUrl,
       (gltf) => {
