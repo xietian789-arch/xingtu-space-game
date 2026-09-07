@@ -1,7 +1,7 @@
 // AstronautController.js —— 经典脚本版本（适配 file:// 协议）
 (function () {
 
-const { Vector3, Object3D, Group, MeshStandardMaterial, Mesh, CapsuleGeometry, SphereGeometry, BoxGeometry, PointLight, Box3, Color, Quaternion } = THREE;
+const { Vector3, Object3D, Group, MeshStandardMaterial, Mesh, CapsuleGeometry, SphereGeometry, BoxGeometry, CylinderGeometry, TorusGeometry, PointLight, Box3, Color, Quaternion } = THREE;
 const GLTFLoader = THREE.GLTFLoader;
 const gltfLoader = new GLTFLoader();
 
@@ -46,93 +46,147 @@ class AstronautController {
     this._flipQuat = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI);
 
     this._buildModel();
-    this._tryLoadRealModel();
+    // 所有模型均为 Three.js 程序化建模，无需加载 GLB
     this._bindKeys();
   }
 
   /* ---------------- 占位模型 ---------------- */
 
-  /** 用基本几何体拼一名宇航员：胶囊身体 + 球形头盔 + 面罩 + 背包 */
+  /** 高精度程序化宇航员模型：完整航天服 + 头盔 + 面罩 + 生命维持背包 + 四肢 + 细节 */
   _buildModel() {
     this.group = new Group();
     this.group.name = 'astronaut';
 
     const suitMat = new MeshStandardMaterial({
-      color: 0xe8edf5,
-      metalness: 0.25,
-      roughness: 0.55,
-      emissive: 0x223344,
-      emissiveIntensity: 0.15,
+      color: 0xe8edf5, metalness: 0.25, roughness: 0.55,
+      emissive: 0x223344, emissiveIntensity: 0.15,
     });
     const helmetMat = new MeshStandardMaterial({
-      color: 0xf2f5fa,
-      metalness: 0.4,
-      roughness: 0.3,
-      emissive: 0x1a2a3a,
-      emissiveIntensity: 0.2,
+      color: 0xf2f5fa, metalness: 0.4, roughness: 0.3,
+      emissive: 0x1a2a3a, emissiveIntensity: 0.2,
     });
     const visorMat = new MeshStandardMaterial({
-      color: 0x1a2f55,
-      metalness: 0.9,
-      roughness: 0.12,
-      emissive: 0x2255aa,
-      emissiveIntensity: 0.55,
+      color: 0x1a2f55, metalness: 0.92, roughness: 0.08,
+      emissive: 0x2255aa, emissiveIntensity: 0.6,
     });
-    const packMat = new MeshStandardMaterial({
-      color: 0xb8c2d4,
-      metalness: 0.5,
-      roughness: 0.45,
-    });
+    const packMat = new MeshStandardMaterial({ color: 0xb8c2d4, metalness: 0.5, roughness: 0.45 });
+    const bootMat = new MeshStandardMaterial({ color: 0x8a94a6, metalness: 0.35, roughness: 0.6 });
+    const gloveMat = new MeshStandardMaterial({ color: 0xc5cdd8, metalness: 0.3, roughness: 0.5 });
+    const detailMat = new MeshStandardMaterial({ color: 0x556677, metalness: 0.6, roughness: 0.35 });
 
-    // 身体：胶囊体
-    const body = new Mesh(new CapsuleGeometry(0.42, 0.75, 6, 14), suitMat);
-    body.position.y = -0.15;
+    // === 躯干 ===
+    const torso = new Mesh(new CapsuleGeometry(0.4, 0.65, 6, 14), suitMat);
+    torso.position.y = -0.1;
+    // 胸部护甲
+    const chestPlate = new Mesh(new BoxGeometry(0.55, 0.35, 0.12), detailMat);
+    chestPlate.position.set(0, 0.12, 0.35);
+    // 腰部连接环
+    const waistRing = new Mesh(new TorusGeometry(0.38, 0.03, 8, 18), detailMat);
+    waistRing.position.y = -0.38;
+    waistRing.rotation.x = Math.PI / 2;
 
-    // 头盔：球体
-    const helmet = new Mesh(new SphereGeometry(0.36, 22, 18), helmetMat);
+    // === 头盔 ===
+    const helmet = new Mesh(new SphereGeometry(0.36, 24, 20), helmetMat);
     helmet.position.y = 0.82;
+    // 头盔边框
+    const helmetRing = new Mesh(new TorusGeometry(0.33, 0.025, 8, 20), detailMat);
+    helmetRing.position.y = 0.58;
+    helmetRing.rotation.x = Math.PI / 2;
+    // 面罩（金色反射）
+    const visor = new Mesh(new SphereGeometry(0.28, 22, 16), visorMat);
+    visor.scale.set(1.05, 0.8, 0.65);
+    visor.position.set(0, 0.84, 0.18);
+    // 头盔顶部灯
+    const headLamp = new Mesh(new SphereGeometry(0.03, 8, 6),
+      new MeshStandardMaterial({ color: 0xffffff, emissive: 0xaaddff, emissiveIntensity: 1.5 }));
+    headLamp.position.set(0, 1.12, 0.12);
 
-    // 面罩：略扁球体，置于头盔前侧（模型朝向 +Z）
-    const visor = new Mesh(new SphereGeometry(0.27, 20, 16), visorMat);
-    visor.scale.set(1, 0.82, 0.72);
-    visor.position.set(0, 0.83, 0.17);
+    // === 生命维持背包 ===
+    const pack = new Mesh(new BoxGeometry(0.58, 0.72, 0.3), packMat);
+    pack.position.set(0, 0.1, -0.4);
+    // 背包细节：氧气罐
+    const tank1 = new Mesh(new CapsuleGeometry(0.06, 0.35, 4, 8), detailMat);
+    tank1.position.set(0.15, 0.15, -0.58);
+    const tank2 = new Mesh(new CapsuleGeometry(0.06, 0.35, 4, 8), detailMat);
+    tank2.position.set(-0.15, 0.15, -0.58);
+    // 背包排气管
+    const exhaust = new Mesh(new CylinderGeometry(0.04, 0.06, 0.12, 8), detailMat);
+    exhaust.position.set(0, 0.5, -0.52);
 
-    // 背包：生命维持系统
-    const pack = new Mesh(new BoxGeometry(0.62, 0.78, 0.34), packMat);
-    pack.position.set(0, 0.12, -0.42);
+    // === 左臂 ===
+    const upperArmL = new Mesh(new CapsuleGeometry(0.12, 0.3, 4, 10), suitMat);
+    upperArmL.position.set(0.52, 0.12, 0);
+    upperArmL.rotation.z = 0.45;
+    const lowerArmL = new Mesh(new CapsuleGeometry(0.1, 0.28, 4, 10), suitMat);
+    lowerArmL.position.set(0.72, -0.15, 0.08);
+    lowerArmL.rotation.z = 0.2;
+    const gloveL = new Mesh(new SphereGeometry(0.1, 10, 8), gloveMat);
+    gloveL.position.set(0.78, -0.38, 0.12);
+    // 手臂连接环
+    const armRingL = new Mesh(new TorusGeometry(0.12, 0.018, 6, 12), detailMat);
+    armRingL.position.set(0.62, -0.02, 0.04);
+    armRingL.rotation.z = 0.35;
 
-    // 手臂：两根短胶囊，微微张开
-    const armGeo = new CapsuleGeometry(0.13, 0.55, 4, 10);
-    const armL = new Mesh(armGeo, suitMat);
-    armL.position.set(0.56, 0.05, 0);
-    armL.rotation.z = 0.35;
-    const armR = new Mesh(armGeo, suitMat);
-    armR.position.set(-0.56, 0.05, 0);
-    armR.rotation.z = -0.35;
+    // === 右臂 ===
+    const upperArmR = new Mesh(new CapsuleGeometry(0.12, 0.3, 4, 10), suitMat);
+    upperArmR.position.set(-0.52, 0.12, 0);
+    upperArmR.rotation.z = -0.45;
+    const lowerArmR = new Mesh(new CapsuleGeometry(0.1, 0.28, 4, 10), suitMat);
+    lowerArmR.position.set(-0.72, -0.15, 0.08);
+    lowerArmR.rotation.z = -0.2;
+    const gloveR = new Mesh(new SphereGeometry(0.1, 10, 8), gloveMat);
+    gloveR.position.set(-0.78, -0.38, 0.12);
+    const armRingR = new Mesh(new TorusGeometry(0.12, 0.018, 6, 12), detailMat);
+    armRingR.position.set(-0.62, -0.02, 0.04);
+    armRingR.rotation.z = -0.35;
 
-    // 腿：两根短胶囊
-    const legGeo = new CapsuleGeometry(0.15, 0.5, 4, 10);
-    const legL = new Mesh(legGeo, suitMat);
-    legL.position.set(0.2, -0.95, 0);
-    const legR = new Mesh(legGeo, suitMat);
-    legR.position.set(-0.2, -0.95, 0);
+    // === 左腿 ===
+    const upperLegL = new Mesh(new CapsuleGeometry(0.14, 0.35, 4, 10), suitMat);
+    upperLegL.position.set(0.2, -0.72, 0);
+    const lowerLegL = new Mesh(new CapsuleGeometry(0.12, 0.32, 4, 10), suitMat);
+    lowerLegL.position.set(0.2, -1.12, 0);
+    const bootL = new Mesh(new BoxGeometry(0.2, 0.16, 0.28), bootMat);
+    bootL.position.set(0.2, -1.42, 0.04);
+    const kneeL = new Mesh(new TorusGeometry(0.13, 0.02, 6, 12), detailMat);
+    kneeL.position.set(0.2, -0.92, 0);
+    kneeL.rotation.x = Math.PI / 2;
 
-    // 胸前指示灯
-    const beacon = new Mesh(
-      new SphereGeometry(0.05, 10, 8),
-      new MeshStandardMaterial({
-        color: 0x66ffcc, emissive: 0x33ffaa, emissiveIntensity: 2,
-      })
-    );
-    beacon.position.set(0.18, 0.28, 0.4);
+    // === 右腿 ===
+    const upperLegR = new Mesh(new CapsuleGeometry(0.14, 0.35, 4, 10), suitMat);
+    upperLegR.position.set(-0.2, -0.72, 0);
+    const lowerLegR = new Mesh(new CapsuleGeometry(0.12, 0.32, 4, 10), suitMat);
+    lowerLegR.position.set(-0.2, -1.12, 0);
+    const bootR = new Mesh(new BoxGeometry(0.2, 0.16, 0.28), bootMat);
+    bootR.position.set(-0.2, -1.42, 0.04);
+    const kneeR = new Mesh(new TorusGeometry(0.13, 0.02, 6, 12), detailMat);
+    kneeR.position.set(-0.2, -0.92, 0);
+    kneeR.rotation.x = Math.PI / 2;
 
+    // === 胸前指示灯 ===
+    const beacon = new Mesh(new SphereGeometry(0.04, 10, 8),
+      new MeshStandardMaterial({ color: 0x66ffcc, emissive: 0x33ffaa, emissiveIntensity: 2 }));
+    beacon.position.set(0.18, 0.28, 0.42);
+    // 第二指示灯
+    const beacon2 = new Mesh(new SphereGeometry(0.03, 8, 6),
+      new MeshStandardMaterial({ color: 0xff6644, emissive: 0xff3322, emissiveIntensity: 1.5 }));
+    beacon2.position.set(-0.15, 0.28, 0.42);
+
+    // 组装
     this.modelGroup = new Group();
-    this.modelGroup.add(body, helmet, visor, pack, armL, armR, legL, legR, beacon);
+    this.modelGroup.add(
+      torso, chestPlate, waistRing,
+      helmet, helmetRing, visor, headLamp,
+      pack, tank1, tank2, exhaust,
+      upperArmL, lowerArmL, gloveL, armRingL,
+      upperArmR, lowerArmR, gloveR, armRingR,
+      upperLegL, lowerLegL, bootL, kneeL,
+      upperLegR, lowerLegR, bootR, kneeR,
+      beacon, beacon2
+    );
     this.group.add(this.modelGroup);
 
-    // 初始位置：蓝色指引线起点，面向 -Z（时间线深处）
     this.group.position.set(0, 0, 0);
-    this.group.rotation.y = Math.PI; // 模型 +Z 为正面，转 π 后面向 -Z
+    this.group.rotation.y = Math.PI;
     this.scene.add(this.group);
   }
 

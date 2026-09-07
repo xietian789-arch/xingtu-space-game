@@ -1,7 +1,7 @@
 // ExhibitManager.js —— 经典脚本版本（适配 file:// 协议）
 (function () {
 
-const { Group, Color, MeshStandardMaterial, Mesh, BoxGeometry, CylinderGeometry, SphereGeometry, ConeGeometry, TorusGeometry, IcosahedronGeometry, DodecahedronGeometry, BufferGeometry, Line, LineBasicMaterial, Vector3, PointLight, Box3, Sphere } = THREE;
+const { Group, Color, MeshStandardMaterial, Mesh, BoxGeometry, CylinderGeometry, SphereGeometry, ConeGeometry, TorusGeometry, IcosahedronGeometry, DodecahedronGeometry, CapsuleGeometry, BufferGeometry, Line, LineBasicMaterial, Vector3, PointLight, Box3, Sphere } = THREE;
 const CSS2DObject = THREE.CSS2DObject;
 const GLTFLoader = THREE.GLTFLoader;
 
@@ -196,34 +196,7 @@ class ExhibitManager {
       
       let asteroid;
       
-      if (this.asteroidModelLoaded && this.asteroidModel) {
-        // 使用GLB模型克隆（随机岩石色，逐陨石独立材质）
-        asteroid = this.asteroidModel.clone();
-        this._applyAsteroidColor(asteroid);
-      } else {
-        // 回退：使用简单几何体
-        const asteroidGeometries = [
-          new IcosahedronGeometry(1, 0),
-          new SphereGeometry(1, 5, 4),
-          new DodecahedronGeometry(1, 0),
-          new ConeGeometry(1, 2, 5),
-          new BoxGeometry(1.5, 1.5, 1.5),
-        ];
-        const geom = asteroidGeometries[Math.floor(Math.random() * asteroidGeometries.length)];
-        
-        const rock = this._randomRockColor();
-        
-        const material = new MeshStandardMaterial({
-          color: new Color().setHSL(rock.h, rock.s, rock.l),
-          roughness: 0.7 + Math.random() * 0.3,
-          metalness: Math.random() * 0.15,
-          flatShading: Math.random() > 0.3,
-        });
-        
-        asteroid = new Mesh(geom, material);
-        asteroidGeometries.forEach(g => g.dispose());
-      }
-      
+      asteroid = this._buildProceduralAsteroid();
       const s = this._randomAsteroidScale();
       asteroid.scale.set(s.x, s.y, s.z);
       asteroid.position.set(x, y, z);
@@ -265,32 +238,7 @@ class ExhibitManager {
         
         let asteroid;
         
-        if (this.asteroidModelLoaded && this.asteroidModel) {
-          // 使用GLB模型克隆（随机岩石色，逐陨石独立材质）
-          asteroid = this.asteroidModel.clone();
-          this._applyAsteroidColor(asteroid);
-        } else {
-          // 回退：使用简单几何体
-          const asteroidGeometries = [
-            new IcosahedronGeometry(1, 0),
-            new SphereGeometry(1, 5, 4),
-            new DodecahedronGeometry(1, 0),
-            new ConeGeometry(1, 2, 5),
-            new BoxGeometry(1.5, 1.5, 1.5),
-          ];
-          const geom = asteroidGeometries[Math.floor(Math.random() * asteroidGeometries.length)];
-          
-          const rock = this._randomRockColor();
-          
-          const material = new MeshStandardMaterial({
-            color: new Color().setHSL(rock.h, rock.s, rock.l),
-            roughness: 0.7 + Math.random() * 0.3,
-            metalness: Math.random() * 0.15,
-            flatShading: Math.random() > 0.3,
-          });
-          
-          asteroid = new Mesh(geom, material);
-        }
+        asteroid = this._buildProceduralAsteroid();
         
         // 双峰尺寸：飞行器之间偏向巨岩（70% 大岩），障碍感更强
         const s = this._randomAsteroidScale(0.7);
@@ -317,16 +265,25 @@ class ExhibitManager {
     return this.asteroids;
   }
 
-  /** 距离触发陨石GLB懒加载 */
-  _checkAsteroidLazyLoad(playerPosition) {
-    if (this.asteroidModelLoaded || this.asteroidModelLoading) return;
-    for (const zone of this.asteroidZones) {
-      if (playerPosition.distanceTo(zone) < 250) {
-        this._triggerAsteroidLoad();
-        return;
-      }
-    }
+  /** 构建程序化陨石（噪声变形二十面体） */
+  _buildProceduralAsteroid() {
+    const size = 0.8 + Math.random() * 0.6;
+    const geo = this._buildAsteroidGeometry(size);
+    const rock = this._randomRockColor();
+    const mat = new MeshStandardMaterial({
+      color: new Color().setHSL(rock.h, rock.s, rock.l),
+      roughness: 0.7 + Math.random() * 0.3,
+      metalness: Math.random() * 0.15,
+      flatShading: true,
+    });
+    const mesh = new Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
   }
+
+  /** 陨石已改为程序化生成，无需加载 GLB */
+  _checkAsteroidLazyLoad(playerPosition) { /* no-op */ }
 
   /**
    * 构建单个代表物
@@ -633,69 +590,286 @@ class ExhibitManager {
     return m;
   }
 
-  /** 太阳能板（薄方块 + 连接杆） */
+  /* ---- 高精度太阳能板：框架 + 多块电池板 + 连接铰链 ---- */
   _solarPanel(mats, w, x, y = 0, rotZ = 0) {
     const grp = new Group();
-    const board = this._mesh(new BoxGeometry(w, 0.05, 0.8), mats.panel, x, y, 0);
-    const strut = this._mesh(new CylinderGeometry(0.03, 0.03, Math.max(0.3, Math.abs(x) - 0.4), 6), mats.dark, x / 2, y, 0);
+    const segs = Math.max(2, Math.round(w / 0.42));
+    const segW = (w - 0.04 * (segs - 1)) / segs;
+    for (let i = 0; i < segs; i++) {
+      const sx = x + (x >= 0 ? 1 : -1) * (i * (segW + 0.04) + segW / 2);
+      grp.add(this._mesh(new BoxGeometry(segW, 0.025, 0.72), mats.panel, sx, y, 0));
+    }
+    grp.add(this._mesh(new BoxGeometry(Math.abs(w), 0.012, 0.012), mats.dark, x + (x >= 0 ? w / 2 : -w / 2), y, 0.37));
+    grp.add(this._mesh(new BoxGeometry(Math.abs(w), 0.012, 0.012), mats.dark, x + (x >= 0 ? w / 2 : -w / 2), y, -0.37));
+    const strutL = Math.max(0.25, Math.abs(x) - w / 2 + 0.15);
+    const strut = this._mesh(new CylinderGeometry(0.022, 0.022, strutL, 6), mats.dark, x * 0.45, y, 0);
     strut.rotation.z = Math.PI / 2;
-    grp.add(board, strut);
+    grp.add(strut);
     grp.rotation.z = rotZ;
     return grp;
   }
 
-  /* ---- 1. 东方红一号：二十面体球状卫星 + 四片太阳能板 ---- */
-  _buildDongfanghong(g, mats, materials) {
-    g.add(this._mesh(new IcosahedronGeometry(0.85, 1), mats.metal));
-    // 四面展开的太阳能板
-    const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
-    angles.forEach((a) => {
-      const panel = this._mesh(new BoxGeometry(1.9, 0.05, 0.72), mats.panel, 1.65, 0, 0);
-      const holder = new Group();
-      holder.add(panel);
-      holder.rotation.y = a;
-      g.add(holder);
-    });
-    // 底部四根天线
-    for (let i = 0; i < 4; i++) {
-      const ant = this._mesh(new CylinderGeometry(0.015, 0.015, 1.3, 5), mats.dark);
-      const holder = new Group();
-      ant.position.y = -0.6;
-      ant.rotation.x = 0.6;
-      holder.add(ant);
-      holder.rotation.y = (Math.PI / 2) * i + Math.PI / 4;
-      g.add(holder);
+  /* ---- 高精度太阳能板（Z轴方向展开） ---- */
+  _solarPanelZ(mats, w, x, y, z) {
+    const grp = new Group();
+    const segs = Math.max(2, Math.round(w / 0.42));
+    const segW = (w - 0.04 * (segs - 1)) / segs;
+    for (let i = 0; i < segs; i++) {
+      const sz = z + (i * (segW + 0.04) + segW / 2);
+      grp.add(this._mesh(new BoxGeometry(0.72, 0.025, segW), mats.panel, x, y, sz));
+    }
+    grp.add(this._mesh(new BoxGeometry(0.012, 0.012, Math.abs(w)), mats.dark, x, y, z + w / 2));
+    grp.add(this._mesh(new BoxGeometry(0.012, 0.012, Math.abs(w)), mats.dark, x, y, z - w / 2));
+    return grp;
+  }
+
+  /* ---- 环形太阳能板（绕圆柱径向展开） ---- */
+  _solarPanelRadial(mats, w, x, y, z, rotAxis = 'x') {
+    const grp = this._solarPanel(mats, w, w / 2 + 0.1, 0, 0);
+    grp.position.set(x, y, z);
+    if (rotAxis === 'x') grp.rotation.x = Math.PI / 2;
+    else if (rotAxis === 'z') grp.rotation.z = Math.PI / 2;
+    return grp;
+  }
+
+  /* ---- 引擎喷口 ---- */
+  _thruster(mat, glowMat, x = 0, y = 0, z = 0, s = 1) {
+    const grp = new Group();
+    grp.add(this._mesh(new CylinderGeometry(0.06 * s, 0.12 * s, 0.18 * s, 12), mat));
+    if (glowMat) {
+      const inner = this._mesh(new CylinderGeometry(0.04 * s, 0.09 * s, 0.1 * s, 10), glowMat, 0, -0.06 * s, 0);
+      grp.add(inner);
+    }
+    grp.position.set(x, y, z);
+    return grp;
+  }
+
+  /* ---- 圆柱体表面窗口/舷窗 ---- */
+  _addPortholes(g, mat, count, radius, y, cylRadius) {
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      const px = Math.cos(angle) * (cylRadius + 0.01);
+      const pz = Math.sin(angle) * (cylRadius + 0.01);
+      const p = this._mesh(new SphereGeometry(0.055, 8, 6), mat, px, y, pz);
+      p.scale.set(1, 1, 0.4);
+      g.add(p);
     }
   }
 
-  /* ---- 2. 神舟五号：圆锥返回舱 + 圆柱轨道舱 + 太阳能板 ---- */
-  _buildShenzhou(g, mats) {
-    // 轨道舱（圆柱）
-    g.add(this._mesh(new CylinderGeometry(0.5, 0.5, 1.3, 20), mats.metal, 0, 0.95, 0));
-    // 返回舱（圆锥，锥尖朝上）
-    const cone = this._mesh(new ConeGeometry(0.78, 1.1, 20), mats.metal, 0, -0.25, 0);
-    g.add(cone);
-    // 推进舱（底部圆柱）
-    g.add(this._mesh(new CylinderGeometry(0.62, 0.55, 0.7, 20), mats.dark, 0, -1.15, 0));
-    // 两侧太阳能板
-    g.add(this._solarPanel(mats, 1.9, 1.55, -1.1));
-    g.add(this._solarPanel(mats, 1.9, -1.55, -1.1));
+  /* ---- 抛物面天线 ---- */
+  _antennaDish(mat, x, y, z, r = 0.3) {
+    const grp = new Group();
+    const dish = this._mesh(new SphereGeometry(r, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2.8), mat);
+    dish.rotation.x = Math.PI;
+    grp.add(dish);
+    grp.add(this._mesh(new CylinderGeometry(0.012, 0.012, r * 0.7, 5), mat, 0, r * 0.25, 0));
+    grp.position.set(x, y, z);
+    return grp;
   }
 
-  /* ---- 3. 神舟七号：神舟造型 + 出舱宇航员小人 ---- */
+  /* ---- RCS 推进器组（4个小型喷嘴） ---- */
+  _rscThrusters(mat, x, y, z) {
+    const grp = new Group();
+    const geo = new ConeGeometry(0.035, 0.08, 6);
+    [[0.08, 0, 0], [-0.08, 0, 0], [0, 0, 0.08], [0, 0, -0.08]].forEach(([dx, dy, dz]) => {
+      const t = this._mesh(geo, mat, dx, dy, dz);
+      t.lookAt(new Vector3(dx * 3, dy, dz * 3));
+      grp.add(t);
+    });
+    grp.position.set(x, y, z);
+    return grp;
+  }
+
+  /* ---- 玉兔号/祝融号月球车（高精度版） ---- */
+  _buildRover(mats) {
+    const rover = new Group();
+    rover.add(this._mesh(new BoxGeometry(0.62, 0.22, 0.42), mats.metal, 0, 0.16, 0));
+    rover.add(this._mesh(new BoxGeometry(0.58, 0.015, 0.38), mats.dark, 0, 0.28, 0));
+    rover.add(this._mesh(new BoxGeometry(0.64, 0.02, 0.48), mats.panel, 0, 0.36, 0));
+    // 太阳能板网格线
+    for (let i = -2; i <= 2; i++) {
+      rover.add(this._mesh(new BoxGeometry(0.64, 0.008, 0.006), mats.dark, 0, 0.375, i * 0.1));
+    }
+    const wheelGeo = new CylinderGeometry(0.09, 0.09, 0.06, 14);
+    const hubGeo = new CylinderGeometry(0.04, 0.04, 0.07, 8);
+    [-0.24, 0, 0.24].forEach((xp) => {
+      [0.26, -0.26].forEach((zp) => {
+        const w = this._mesh(wheelGeo, mats.dark, xp, -0.02, zp);
+        w.rotation.x = Math.PI / 2;
+        rover.add(w);
+        const h = this._mesh(hubGeo, mats.metal, xp, -0.02, zp);
+        h.rotation.x = Math.PI / 2;
+        rover.add(h);
+      });
+    });
+    rover.add(this._mesh(new CylinderGeometry(0.02, 0.02, 0.32, 8), mats.dark, 0.2, 0.52, 0.1));
+    rover.add(this._mesh(new BoxGeometry(0.1, 0.07, 0.07), mats.metal, 0.2, 0.7, 0.1));
+    rover.add(this._mesh(new SphereGeometry(0.025, 8, 6), mats.panel, 0.2, 0.75, 0.1));
+    rover.add(this._mesh(new CylinderGeometry(0.035, 0.05, 0.06, 8), mats.dark, -0.18, 0.3, -0.15));
+    return rover;
+  }
+
+  /* ---- 不规则陨石几何体（噪声变形） ---- */
+  _buildAsteroidGeometry(size) {
+    const geo = new IcosahedronGeometry(size, 2);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      const len = Math.sqrt(x * x + y * y + z * z);
+      const nx = x / len, ny = y / len, nz = z / len;
+      const noise = 0.7 + 0.3 * Math.sin(nx * 5.7 + ny * 3.1) * Math.cos(nz * 4.3 + nx * 2.7)
+        + 0.15 * Math.sin(nx * 11.3 + nz * 7.9) * Math.cos(ny * 9.1);
+      pos.setXYZ(i, nx * size * noise, ny * size * noise, nz * size * noise);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  /* ---- 1. 东方红一号：多面体球状卫星 + 天线阵 + 四片太阳能板 ---- */
+  _buildDongfanghong(g, mats, materials) {
+    // 主体：二十面体（ faceted 球体）
+    g.add(this._mesh(new IcosahedronGeometry(0.85, 1), mats.metal));
+    // 赤道环形带
+    g.add(this._mesh(new TorusGeometry(0.87, 0.025, 8, 28), mats.dark, 0, 0, 0));
+    // 表面仪器模块（8个小凸起）
+    for (let i = 0; i < 8; i++) {
+      const phi = Math.acos(1 - 2 * (i + 0.5) / 8);
+      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      const bx = 0.82 * Math.sin(phi) * Math.cos(theta);
+      const by = 0.82 * Math.cos(phi);
+      const bz = 0.82 * Math.sin(phi) * Math.sin(theta);
+      const box = this._mesh(new BoxGeometry(0.12, 0.06, 0.1), mats.dark, bx, by, bz);
+      box.lookAt(0, 0, 0);
+      g.add(box);
+    }
+    // 四片太阳能板（带框架细节）
+    const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
+    angles.forEach((a) => {
+      const holder = new Group();
+      // 主面板（分段）
+      const panelGrp = new Group();
+      panelGrp.add(this._mesh(new BoxGeometry(0.88, 0.04, 0.68), mats.panel, 1.28, 0, 0));
+      panelGrp.add(this._mesh(new BoxGeometry(0.82, 0.04, 0.68), mats.panel, 2.2, 0, 0));
+      // 面板间连接铰链
+      panelGrp.add(this._mesh(new BoxGeometry(0.06, 0.06, 0.12), mats.dark, 1.78, 0, 0));
+      // 支撑臂
+      panelGrp.add(this._mesh(new CylinderGeometry(0.025, 0.025, 0.85, 6), mats.dark, 0.45, 0, 0));
+      const strut = this._mesh(new CylinderGeometry(0.018, 0.018, 1.4, 5), mats.dark, 1.5, 0, 0);
+      strut.rotation.z = Math.PI / 2;
+      panelGrp.add(strut);
+      holder.add(panelGrp);
+      holder.rotation.y = a;
+      g.add(holder);
+    });
+    // 底部四根天线（更精细）
+    for (let i = 0; i < 4; i++) {
+      const holder = new Group();
+      // 主天线杆
+      const ant = this._mesh(new CylinderGeometry(0.012, 0.018, 1.4, 6), mats.dark);
+      ant.position.y = -0.65;
+      ant.rotation.x = 0.55;
+      holder.add(ant);
+      // 天线顶端小球
+      const tip = this._mesh(new SphereGeometry(0.025, 6, 5), mats.metal, 0, -1.3, 0.55);
+      holder.add(tip);
+      holder.rotation.y = (Math.PI / 2) * i + Math.PI / 4;
+      g.add(holder);
+    }
+    // 顶部短天线
+    g.add(this._mesh(new CylinderGeometry(0.01, 0.01, 0.4, 5), mats.dark, 0, 1.05, 0));
+    g.add(this._mesh(new SphereGeometry(0.03, 6, 5), mats.metal, 0, 1.28, 0));
+  }
+
+  /* ---- 2. 神舟五号：轨道舱 + 返回舱 + 推进舱 + 太阳能板 ---- */
+  _buildShenzhou(g, mats) {
+    // === 轨道舱（顶部圆柱） ===
+    g.add(this._mesh(new CylinderGeometry(0.48, 0.5, 1.1, 22), mats.metal, 0, 0.95, 0));
+    // 轨道舱细节环
+    g.add(this._mesh(new TorusGeometry(0.5, 0.02, 8, 22), mats.dark, 0, 0.55, 0));
+    g.add(this._mesh(new TorusGeometry(0.49, 0.015, 8, 22), mats.dark, 0, 1.35, 0));
+    // 舷窗
+    this._addPortholes(g, mats.dark, 4, 0.48, 1.0, 0.5);
+    // 对接口（顶部）
+    g.add(this._mesh(new CylinderGeometry(0.2, 0.22, 0.18, 16), mats.dark, 0, 1.6, 0));
+    g.add(this._mesh(new TorusGeometry(0.18, 0.03, 8, 16), mats.metal, 0, 1.7, 0));
+
+    // === 返回舱（圆锥体） ===
+    g.add(this._mesh(new ConeGeometry(0.75, 1.0, 22), mats.metal, 0, -0.15, 0));
+    // 热防护层（底部隔热罩）
+    g.add(this._mesh(new CylinderGeometry(0.75, 0.72, 0.06, 22), mats.dark, 0, -0.62, 0));
+    // 舱体分界线
+    g.add(this._mesh(new TorusGeometry(0.63, 0.018, 8, 22), mats.dark, 0, 0.15, 0));
+
+    // === 推进舱（底部圆柱） ===
+    g.add(this._mesh(new CylinderGeometry(0.6, 0.55, 0.65, 20), mats.dark, 0, -1.1, 0));
+    // 推进舱细节
+    g.add(this._mesh(new TorusGeometry(0.58, 0.015, 8, 20), mats.metal, 0, -0.85, 0));
+    // 主引擎喷口
+    g.add(this._thruster(mats.dark, mats.panel, 0, -1.48, 0, 1.8));
+    // 4个小姿态控制推进器
+    for (let i = 0; i < 4; i++) {
+      const angle = (Math.PI / 2) * i;
+      const px = Math.cos(angle) * 0.56;
+      const pz = Math.sin(angle) * 0.56;
+      g.add(this._thruster(mats.dark, null, px, -1.25, pz, 0.6));
+    }
+
+    // === 两侧太阳能板（高精度分段式） ===
+    g.add(this._solarPanel(mats, 1.9, 1.55, -1.05));
+    g.add(this._solarPanel(mats, 1.9, -1.55, -1.05));
+    // RCS 推进器组
+    g.add(this._rscThrusters(mats.dark, 0.52, 0.6, 0));
+    g.add(this._rscThrusters(mats.dark, -0.52, 0.6, 0));
+  }
+
+  /* ---- 3. 神舟七号：神舟造型 + 出舱宇航员 ---- */
   _buildShenzhou7(g, mats, materials) {
     this._buildShenzhou(g, mats);
-    // 出舱宇航员（两个球 + 圆柱）
+    // === 出舱宇航员（更精细） ===
     const astro = new Group();
-    const head = this._mesh(new SphereGeometry(0.16, 14, 12), mats.metal, 0, 0.42, 0);
-    const bodyM = this._mesh(new CylinderGeometry(0.13, 0.15, 0.5, 12), mats.metal, 0, 0.02, 0);
-    const joint = this._mesh(new SphereGeometry(0.11, 12, 10), mats.dark, 0, -0.3, 0);
-    astro.add(head, bodyM, joint);
+    // 头盔
+    const helmet = this._mesh(new SphereGeometry(0.14, 14, 12), mats.metal, 0, 0.4, 0);
+    astro.add(helmet);
+    // 面罩
+    const visor = this._mesh(new SphereGeometry(0.1, 12, 10),
+      new MeshStandardMaterial({ color: 0x1a2f55, metalness: 0.9, roughness: 0.1, emissive: 0x2255aa, emissiveIntensity: 0.5 }),
+      0, 0.4, 0.08);
+    visor.scale.set(1, 0.8, 0.6);
+    astro.add(visor);
+    // 身体
+    astro.add(this._mesh(new CapsuleGeometry(0.11, 0.3, 4, 10), mats.metal, 0, 0.05, 0));
+    // 生命维持背包
+    astro.add(this._mesh(new BoxGeometry(0.16, 0.22, 0.1), mats.dark, 0, 0.08, -0.14));
+    // 左臂（伸展）
+    const armL = this._mesh(new CapsuleGeometry(0.05, 0.22, 4, 8), mats.metal, 0.18, 0.12, 0.08);
+    armL.rotation.z = 0.8;
+    armL.rotation.x = -0.3;
+    astro.add(armL);
+    // 右臂
+    const armR = this._mesh(new CapsuleGeometry(0.05, 0.22, 4, 8), mats.metal, -0.15, 0.15, -0.05);
+    armR.rotation.z = -0.6;
+    astro.add(armR);
+    // 左腿
+    const legL = this._mesh(new CapsuleGeometry(0.06, 0.2, 4, 8), mats.metal, 0.08, -0.25, 0.04);
+    legL.rotation.z = 0.15;
+    astro.add(legL);
+    // 右腿
+    const legR = this._mesh(new CapsuleGeometry(0.06, 0.2, 4, 8), mats.metal, -0.08, -0.25, -0.04);
+    legR.rotation.z = -0.15;
+    astro.add(legR);
+
     astro.position.set(1.25, 0.55, 0.5);
-    astro.rotation.z = -0.4; // 漂浮姿态
+    astro.rotation.z = -0.4;
     g.add(astro);
-    // 安全系绳
-    const ropePts = [new Vector3(0.5, 0.4, 0.2), new Vector3(0.9, 0.62, 0.42), new Vector3(1.22, 0.58, 0.5)];
+
+    // === 安全系绳（曲线） ===
+    const ropePts = [];
+    for (let t = 0; t <= 1; t += 0.1) {
+      const x = 0.5 + t * 0.72;
+      const y = 0.4 + Math.sin(t * Math.PI) * 0.25;
+      const z = 0.2 + t * 0.3;
+      ropePts.push(new Vector3(x, y, z));
+    }
     const rope = new Line(
       new BufferGeometry().setFromPoints(ropePts),
       new LineBasicMaterial({ color: 0xccd6ee, transparent: true, opacity: 0.7 })
@@ -703,185 +877,240 @@ class ExhibitManager {
     g.add(rope);
   }
 
-  /* ---- 4. 天宫一号 + 神舟八号：两圆柱水平对接 + 环状对接机构 ---- */
+  /* ---- 4. 天宫一号 + 神舟八号：对接组合体 ---- */
   _buildDocking(g, mats) {
-    // 天宫一号（大圆柱，沿 X 轴）
-    const big = this._mesh(new CylinderGeometry(0.7, 0.7, 2.5, 22), mats.metal, -1.05, 0, 0);
-    big.rotation.z = Math.PI / 2;
-    g.add(big);
-    // 神舟八号（小圆柱）
-    const small = this._mesh(new CylinderGeometry(0.45, 0.45, 1.7, 18), mats.dark, 1.45, 0, 0);
-    small.rotation.z = Math.PI / 2;
-    g.add(small);
-    // 对接机构环
-    const ring = this._mesh(new TorusGeometry(0.5, 0.09, 12, 26), mats.metal, 0.42, 0, 0);
-    ring.rotation.y = Math.PI / 2;
-    g.add(ring);
-    // 天宫一号上下两片太阳能板
-    g.add(this._mesh(new BoxGeometry(1.7, 0.05, 0.8), mats.panel, -1.05, 1.55, 0));
-    g.add(this._mesh(new BoxGeometry(1.7, 0.05, 0.8), mats.panel, -1.05, -1.55, 0));
+    // === 天宫一号（大圆柱，沿 X 轴） ===
+    const tgBody = this._mesh(new CylinderGeometry(0.68, 0.68, 2.2, 24), mats.metal, -1.05, 0, 0);
+    tgBody.rotation.z = Math.PI / 2;
+    g.add(tgBody);
+    // 前端缩窄段
+    const tgFront = this._mesh(new CylinderGeometry(0.5, 0.68, 0.4, 20), mats.metal, -2.25, 0, 0);
+    tgFront.rotation.z = Math.PI / 2;
+    g.add(tgFront);
+    // 后端
+    const tgRear = this._mesh(new CylinderGeometry(0.68, 0.55, 0.3, 20), mats.dark, 0.15, 0, 0);
+    tgRear.rotation.z = Math.PI / 2;
+    g.add(tgRear);
+    // 舱体细节环
+    [-1.5, -0.8, -0.2].forEach(xp => {
+      g.add(this._mesh(new TorusGeometry(0.69, 0.015, 8, 24), mats.dark, xp, 0, 0));
+    });
+    // 舷窗
+    this._addPortholes(g, mats.dark, 3, -1.2, 0, 0.69);
+
+    // === 神舟八号（小圆柱） ===
+    const szBody = this._mesh(new CylinderGeometry(0.42, 0.42, 1.5, 18), mats.dark, 1.35, 0, 0);
+    szBody.rotation.z = Math.PI / 2;
+    g.add(szBody);
+    // 返回舱锥段
+    const szCone = this._mesh(new ConeGeometry(0.44, 0.5, 18), mats.dark, 2.25, 0, 0);
+    szCone.rotation.z = -Math.PI / 2;
+    g.add(szCone);
+    // 细节环
+    g.add(this._mesh(new TorusGeometry(0.43, 0.012, 8, 18), mats.metal, 1.0, 0, 0));
+
+    // === 对接机构环 ===
+    const dockRing = this._mesh(new TorusGeometry(0.48, 0.065, 12, 26), mats.metal, 0.42, 0, 0);
+    dockRing.rotation.y = Math.PI / 2;
+    g.add(dockRing);
+    // 对接探针
+    g.add(this._mesh(new CylinderGeometry(0.03, 0.03, 0.35, 6), mats.dark, 0.55, 0, 0));
+
+    // === 天宫太阳能板（上下两片） ===
+    g.add(this._mesh(new BoxGeometry(1.6, 0.04, 0.75), mats.panel, -1.05, 1.45, 0));
+    g.add(this._mesh(new BoxGeometry(1.6, 0.04, 0.75), mats.panel, -1.05, -1.45, 0));
+    // 太阳能板支撑臂
+    g.add(this._mesh(new CylinderGeometry(0.02, 0.02, 0.7, 5), mats.dark, -1.05, 0.9, 0));
+    g.add(this._mesh(new CylinderGeometry(0.02, 0.02, 0.7, 5), mats.dark, -1.05, -0.9, 0));
+    // 神舟太阳能板（左右两片）
+    g.add(this._solarPanel(mats, 1.2, 1.35, 0, Math.PI / 2));
+    g.add(this._solarPanel(mats, 1.2, 1.35, 0, -Math.PI / 2));
   }
 
-  /* ---- 5. 嫦娥三号：圆盘着陆器 + 四条着陆腿 + 六轮月球车 ---- */
+  /* ---- 5. 嫦娥三号：高精度着陆器 + 着陆腿 + 玉兔号 ---- */
   _buildChange3(g, mats) {
-    // 着陆器主体（圆盘）
-    g.add(this._mesh(new CylinderGeometry(1.05, 1.25, 0.5, 24), mats.metal, 0, 0.45, 0));
-    g.add(this._mesh(new CylinderGeometry(0.55, 0.7, 0.35, 18), mats.dark, 0, 0.85, 0));
-    // 四条着陆腿
+    // === 着陆器主体 ===
+    g.add(this._mesh(new CylinderGeometry(1.0, 1.2, 0.42, 26), mats.metal, 0, 0.42, 0));
+    g.add(this._mesh(new CylinderGeometry(0.52, 0.65, 0.28, 20), mats.dark, 0, 0.72, 0));
+    g.add(this._mesh(new CylinderGeometry(0.3, 0.52, 0.2, 16), mats.metal, 0, 0.92, 0));
+    g.add(this._mesh(new TorusGeometry(1.1, 0.02, 8, 26), mats.dark, 0, 0.25, 0));
+    g.add(this._mesh(new TorusGeometry(0.58, 0.015, 8, 20), mats.dark, 0, 0.6, 0));
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      g.add(this._mesh(new BoxGeometry(0.1, 0.08, 0.08), mats.dark, Math.cos(a) * 0.75, 0.72, Math.sin(a) * 0.75));
+    }
+    // === 四条着陆腿（带减震垫） ===
     for (let i = 0; i < 4; i++) {
       const holder = new Group();
-      const leg = this._mesh(new CylinderGeometry(0.045, 0.06, 1.25, 8), mats.dark, 1.15, -0.28, 0);
-      leg.rotation.z = 0.62;
-      const foot = this._mesh(new CylinderGeometry(0.16, 0.2, 0.07, 10), mats.dark, 1.52, -0.62, 0);
-      holder.add(leg, foot);
+      holder.add(this._mesh(new CylinderGeometry(0.035, 0.05, 1.15, 8), mats.dark, 1.05, -0.22, 0));
+      const brace = this._mesh(new CylinderGeometry(0.02, 0.02, 0.6, 6), mats.dark, 0.85, 0.05, 0);
+      brace.rotation.z = 1.2;
+      holder.add(brace);
+      holder.add(this._mesh(new CylinderGeometry(0.15, 0.18, 0.05, 12), mats.dark, 1.42, -0.58, 0));
       holder.rotation.y = (Math.PI / 2) * i + Math.PI / 4;
       g.add(holder);
     }
-    // 玉兔号月球车（六轮）
+    // === 底部推进器 ===
+    g.add(this._thruster(mats.dark, mats.panel, 0, 0.12, 0, 2.2));
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 + Math.PI / 6;
+      g.add(this._thruster(mats.dark, null, Math.cos(a) * 0.85, 0.15, Math.sin(a) * 0.85, 0.8));
+    }
+    // === 玉兔号月球车 ===
     const rover = this._buildRover(mats);
-    rover.position.set(1.9, -0.62, 0.8);
+    rover.position.set(1.85, -0.58, 0.75);
     rover.rotation.y = 0.6;
     rover.scale.setScalar(0.9);
     g.add(rover);
+    // 释放坡道
+    const ramp = this._mesh(new BoxGeometry(0.3, 0.02, 0.8), mats.dark, 1.4, -0.2, 0.5);
+    ramp.rotation.z = 0.45; ramp.rotation.y = 0.5;
+    g.add(ramp);
   }
 
-  /** 小车通用造型：盒体 + 六轮 + 桅杆 */
-  _buildRover(mats) {
-    const rover = new Group();
-    rover.add(this._mesh(new BoxGeometry(0.62, 0.3, 0.45), mats.metal, 0, 0.18, 0));
-    // 顶部太阳能板
-    rover.add(this._mesh(new BoxGeometry(0.66, 0.03, 0.5), mats.panel, 0, 0.38, 0));
-    // 六个轮子
-    const wheelGeo = new CylinderGeometry(0.11, 0.11, 0.07, 12);
-    [-0.26, 0, 0.26].forEach((x) => {
-      [0.26, -0.26].forEach((z) => {
-        const w = this._mesh(wheelGeo, mats.dark, x, -0.02, z);
-        w.rotation.x = Math.PI / 2;
-        rover.add(w);
-      });
-    });
-    // 桅杆 + 相机头
-    rover.add(this._mesh(new CylinderGeometry(0.025, 0.025, 0.35, 8), mats.dark, 0.22, 0.55, 0.12));
-    rover.add(this._mesh(new BoxGeometry(0.12, 0.09, 0.09), mats.metal, 0.22, 0.74, 0.12));
-    return rover;
-  }
-
-  /* ---- 6. 天问一号 + 祝融号：圆柱环绕器 + 火星车 ---- */
+  /* ---- 6. 天问一号 + 祝融号：高精度环绕器 + 火星车 ---- */
   _buildTianwen1(g, mats) {
-    // 环绕器（圆柱主体 + 大天线 + 太阳能板）
-    g.add(this._mesh(new CylinderGeometry(0.55, 0.55, 1.0, 20), mats.metal, 0, 0.75, 0));
-    const dish = this._mesh(new SphereGeometry(0.42, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2.6), mats.metal, 0, 1.45, 0);
-    dish.rotation.x = Math.PI;
-    g.add(dish);
-    g.add(this._solarPanel(mats, 2.1, 1.75, 0.75));
-    g.add(this._solarPanel(mats, 2.1, -1.75, 0.75));
-    // 祝融号火星车
+    g.add(this._mesh(new CylinderGeometry(0.52, 0.52, 0.9, 22), mats.metal, 0, 0.72, 0));
+    g.add(this._mesh(new CylinderGeometry(0.35, 0.52, 0.2, 18), mats.dark, 0, 1.22, 0));
+    g.add(this._mesh(new CylinderGeometry(0.52, 0.42, 0.15, 18), mats.dark, 0, 0.22, 0));
+    g.add(this._mesh(new TorusGeometry(0.53, 0.015, 8, 22), mats.dark, 0, 0.5, 0));
+    g.add(this._mesh(new TorusGeometry(0.53, 0.015, 8, 22), mats.dark, 0, 0.95, 0));
+    this._addPortholes(g, mats.dark, 3, 0.5, 0.72, 0.53);
+    g.add(this._antennaDish(mats.metal, 0, 1.45, 0, 0.38));
+    g.add(this._mesh(new CylinderGeometry(0.025, 0.025, 0.2, 6), mats.dark, 0, 1.35, 0));
+    g.add(this._solarPanel(mats, 2.1, 1.72, 0.72));
+    g.add(this._solarPanel(mats, 2.1, -1.72, 0.72));
+    g.add(this._thruster(mats.dark, mats.panel, 0, 0.1, 0, 1.2));
     const rover = this._buildRover(mats);
-    rover.position.set(1.55, -0.85, 0.7);
+    rover.position.set(1.5, -0.82, 0.65);
     rover.rotation.y = -0.5;
     rover.scale.setScalar(0.85);
     g.add(rover);
   }
 
-  /* ---- 7. 嫦娥五号：圆柱轨道器 + 着陆器 + 返回舱 ---- */
+  /* ---- 7. 嫦娥五号：高精度轨道器 + 着陆器 + 返回舱 ---- */
   _buildChange5(g, mats) {
-    // 轨道器（上方圆柱 + 太阳能板）
-    g.add(this._mesh(new CylinderGeometry(0.58, 0.58, 1.05, 20), mats.metal, 0, 0.85, 0));
-    g.add(this._solarPanel(mats, 1.7, 1.45, 0.85));
-    g.add(this._solarPanel(mats, 1.7, -1.45, 0.85));
-    // 着陆器（下方）
-    g.add(this._mesh(new CylinderGeometry(0.72, 0.95, 0.62, 20), mats.dark, 0, -0.25, 0));
-    // 四条短着陆腿
+    g.add(this._mesh(new CylinderGeometry(0.55, 0.55, 0.95, 22), mats.metal, 0, 0.82, 0));
+    g.add(this._mesh(new CylinderGeometry(0.35, 0.55, 0.18, 18), mats.dark, 0, 1.35, 0));
+    g.add(this._mesh(new TorusGeometry(0.56, 0.015, 8, 22), mats.dark, 0, 0.5, 0));
+    g.add(this._mesh(new TorusGeometry(0.56, 0.015, 8, 22), mats.dark, 0, 1.1, 0));
+    this._addPortholes(g, mats.dark, 3, 0.55, 0.82, 0.56);
+    g.add(this._solarPanel(mats, 1.7, 1.42, 0.82));
+    g.add(this._solarPanel(mats, 1.7, -1.42, 0.82));
+    g.add(this._mesh(new CylinderGeometry(0.68, 0.9, 0.55, 22), mats.dark, 0, -0.22, 0));
+    g.add(this._mesh(new CylinderGeometry(0.9, 0.95, 0.08, 22), mats.dark, 0, -0.52, 0));
+    g.add(this._mesh(new TorusGeometry(0.78, 0.015, 8, 22), mats.metal, 0, -0.1, 0));
     for (let i = 0; i < 4; i++) {
       const holder = new Group();
-      const leg = this._mesh(new CylinderGeometry(0.04, 0.05, 0.85, 8), mats.dark, 0.95, -0.75, 0);
-      leg.rotation.z = 0.55;
-      holder.add(leg);
+      holder.add(this._mesh(new CylinderGeometry(0.035, 0.045, 0.8, 8), mats.dark, 0.88, -0.7, 0));
+      const brace = this._mesh(new CylinderGeometry(0.018, 0.018, 0.45, 6), mats.dark, 0.7, -0.35, 0);
+      brace.rotation.z = 1.0;
+      holder.add(brace);
+      holder.add(this._mesh(new CylinderGeometry(0.12, 0.15, 0.04, 10), mats.dark, 1.18, -0.98, 0));
       holder.rotation.y = (Math.PI / 2) * i + Math.PI / 4;
       g.add(holder);
     }
-    // 返回舱（侧面小圆锥）
-    const cap = this._mesh(new ConeGeometry(0.34, 0.6, 16), mats.metal, 1.0, 0.25, 0.35);
+    const cap = this._mesh(new ConeGeometry(0.3, 0.55, 16), mats.metal, 0.95, 0.22, 0.32);
     cap.rotation.z = -Math.PI / 2.4;
     g.add(cap);
+    g.add(this._mesh(new CylinderGeometry(0.3, 0.28, 0.04, 14), mats.dark, 1.18, 0.38, 0.32));
+    g.add(this._thruster(mats.dark, mats.panel, 0, -0.58, 0, 1.5));
   }
 
-  /* ---- 8. 天和核心舱：大圆柱 + 两侧大型太阳能板 + 对接口 ---- */
+  /* ---- 8. 天和核心舱：高精度大圆柱 + 太阳能板 + 机械臂 ---- */
   _buildTianhe(g, mats) {
-    // 核心舱主体（沿 X 轴的大圆柱）
-    const bodyM = this._mesh(new CylinderGeometry(0.72, 0.72, 3.4, 24), mats.metal, 0, 0, 0);
-    bodyM.rotation.z = Math.PI / 2;
-    g.add(bodyM);
-    // 节点舱（前端略粗短圆柱）
-    const node = this._mesh(new CylinderGeometry(0.55, 0.72, 0.7, 20), mats.dark, 2.0, 0, 0);
+    const body = this._mesh(new CylinderGeometry(0.7, 0.7, 3.0, 26), mats.metal, 0, 0, 0);
+    body.rotation.z = Math.PI / 2;
+    g.add(body);
+    [-1.0, -0.3, 0.4, 1.1].forEach(xp => {
+      const ring = this._mesh(new TorusGeometry(0.71, 0.015, 8, 26), mats.dark, xp, 0, 0);
+      ring.rotation.y = Math.PI / 2;
+      g.add(ring);
+    });
+    this._addPortholes(g, mats.dark, 4, 0.7, 0, 0.71);
+    this._addPortholes(g, mats.dark, 3, 0.7, -0.6, 0.71);
+    const node = this._mesh(new CylinderGeometry(0.52, 0.7, 0.65, 22), mats.dark, 1.82, 0, 0);
     node.rotation.z = Math.PI / 2;
     g.add(node);
-    // 对接口标记（圆环）
-    const port = this._mesh(new TorusGeometry(0.4, 0.07, 10, 24), mats.metal, 2.45, 0, 0);
+    g.add(this._mesh(new TorusGeometry(0.6, 0.018, 8, 22), mats.metal, 1.55, 0, 0));
+    const port = this._mesh(new TorusGeometry(0.38, 0.055, 12, 24), mats.metal, 2.25, 0, 0);
     port.rotation.y = Math.PI / 2;
     g.add(port);
-    // 两侧大型太阳能板（沿 Z 方向展开）
+    g.add(this._mesh(new CylinderGeometry(0.25, 0.28, 0.2, 16), mats.dark, 2.2, 0, 0));
+    g.add(this._mesh(new CylinderGeometry(0.15, 0.15, 0.12, 12), mats.metal, 2.32, 0, 0));
+    g.add(this._mesh(new CylinderGeometry(0.7, 0.6, 0.3, 22), mats.dark, -1.65, 0, 0));
+    g.add(this._thruster(mats.dark, mats.panel, -1.82, 0, 0, 2.0));
+    for (let i = 0; i < 4; i++) {
+      const a = (Math.PI / 2) * i + Math.PI / 4;
+      g.add(this._thruster(mats.dark, null, -1.6, Math.cos(a) * 0.62, Math.sin(a) * 0.62, 0.7));
+    }
     [1, -1].forEach((side) => {
-      const panelGrp = new Group();
-      const board = this._mesh(new BoxGeometry(1.05, 0.05, 2.5), mats.panel, 0, 0, side * 1.9);
-      const strut = this._mesh(new CylinderGeometry(0.035, 0.035, 1.1, 6), mats.dark, 0, 0, side * 0.55);
-      strut.rotation.x = Math.PI / 2;
-      panelGrp.add(board, strut);
-      panelGrp.position.x = -0.6;
-      g.add(panelGrp);
+      const pg = new Group();
+      pg.add(this._mesh(new BoxGeometry(0.95, 0.035, 1.1), mats.panel, 0, 0, side * 1.15));
+      pg.add(this._mesh(new BoxGeometry(0.95, 0.035, 1.1), mats.panel, 0, 0, side * 2.35));
+      pg.add(this._mesh(new BoxGeometry(0.12, 0.05, 0.12), mats.dark, 0, 0, side * 1.72));
+      const arm = this._mesh(new CylinderGeometry(0.028, 0.028, 0.9, 6), mats.dark, 0, 0, side * 0.55);
+      arm.rotation.x = Math.PI / 2;
+      pg.add(arm);
+      pg.position.x = -0.5;
+      g.add(pg);
     });
+    const armSeg1 = this._mesh(new CylinderGeometry(0.03, 0.03, 1.2, 6), mats.dark, 0.5, 0.75, 0);
+    armSeg1.rotation.z = 0.3;
+    g.add(armSeg1);
+    g.add(this._mesh(new CylinderGeometry(0.025, 0.025, 0.8, 6), mats.dark, 0.9, 1.1, 0));
+    g.add(this._mesh(new SphereGeometry(0.05, 8, 6), mats.metal, 0.72, 0.92, 0));
   }
 
-  /* ---- 9. 中国空间站：T 字构型（天和 + 问天 + 梦天） ---- */
+  /* ---- 9. 中国空间站 T 字构型：天和 + 问天 + 梦天 ---- */
   _buildCSS(g, mats) {
-    // 天和核心舱（中央，沿 X 轴）
-    const core = this._mesh(new CylinderGeometry(0.55, 0.55, 2.6, 20), mats.metal, 0, 0, 0);
+    const core = this._mesh(new CylinderGeometry(0.52, 0.52, 2.4, 22), mats.metal, 0, 0, 0);
     core.rotation.z = Math.PI / 2;
     g.add(core);
-    // 问天 / 梦天实验舱（两侧，沿 Z 轴，形成 T 字）
+    [-0.6, 0, 0.6].forEach(xp => g.add(this._mesh(new TorusGeometry(0.53, 0.012, 8, 22), mats.dark, xp, 0, 0)));
+    const node = this._mesh(new CylinderGeometry(0.4, 0.52, 0.4, 18), mats.dark, 1.4, 0, 0);
+    node.rotation.z = Math.PI / 2;
+    g.add(node);
+    const fp = this._mesh(new TorusGeometry(0.3, 0.04, 10, 20), mats.metal, 1.7, 0, 0);
+    fp.rotation.y = Math.PI / 2;
+    g.add(fp);
+    g.add(this._mesh(new CylinderGeometry(0.52, 0.42, 0.25, 18), mats.dark, -1.32, 0, 0));
+    g.add(this._thruster(mats.dark, mats.panel, -1.48, 0, 0, 1.3));
     [1, -1].forEach((side) => {
-      const lab = this._mesh(new CylinderGeometry(0.5, 0.5, 2.2, 20), mats.metal, 0, 0, side * 1.75);
+      const lab = this._mesh(new CylinderGeometry(0.48, 0.48, 2.0, 20), mats.metal, 0, 0, side * 1.65);
       lab.rotation.x = Math.PI / 2;
       g.add(lab);
-      // 每个实验舱自带太阳能板
-      const board = this._mesh(new BoxGeometry(2.2, 0.05, 0.85), mats.panel, 0, 0, side * 1.9);
-      board.position.y = side > 0 ? 1.15 : -1.15;
-      g.add(board);
+      g.add(this._mesh(new TorusGeometry(0.49, 0.012, 8, 20), mats.dark, 0, 0, side * 1.0));
+      g.add(this._mesh(new TorusGeometry(0.49, 0.012, 8, 20), mats.dark, 0, 0, side * 2.2));
+      const lp = this._mesh(new TorusGeometry(0.28, 0.035, 8, 18), mats.metal, 0, 0, side * 2.7);
+      lp.rotation.x = Math.PI / 2;
+      g.add(lp);
+      this._addPortholes(g, mats.dark, 2, 0.48, 0, 0.49);
+      const bY = side > 0 ? 1.1 : -1.1;
+      g.add(this._mesh(new BoxGeometry(2.0, 0.03, 0.78), mats.panel, 0, bY, side * 2.0));
+      g.add(this._mesh(new CylinderGeometry(0.02, 0.02, 0.5, 5), mats.dark, 0, bY * 0.6, side * 2.0));
     });
-    // 核心舱太阳能板
     [1, -1].forEach((side) => {
-      const board = this._mesh(new BoxGeometry(0.9, 0.05, 1.9), mats.panel, side * 1.75, 0, 0);
-      board.position.z = side * 1.35;
-      board.rotation.y = side > 0 ? -0.4 : 0.4;
+      const board = this._mesh(new BoxGeometry(0.85, 0.03, 1.7), mats.panel, side * 1.6, 0, 0);
+      board.position.z = side * 1.2;
+      board.rotation.y = side > 0 ? -0.35 : 0.35;
       g.add(board);
     });
-    // 对接口标记
-    const port = this._mesh(new TorusGeometry(0.32, 0.06, 10, 20), mats.dark, 1.5, 0, 0);
-    port.rotation.y = Math.PI / 2;
-    g.add(port);
+    g.add(this._mesh(new CylinderGeometry(0.022, 0.022, 0.9, 6), mats.dark, 0.3, 0.58, 0));
+    g.add(this._mesh(new SphereGeometry(0.035, 6, 5), mats.metal, 0.3, 0.58, 0));
   }
 
-  /* ---- 10. 嫦娥六号：嫦娥五号造型 + 底部月球表面 ---- */
+  /* ---- 10. 嫦娥六号：嫦娥五号 + 月球背面 ---- */
   _buildChange6(g, mats, materials) {
     this._buildChange5(g, mats);
-    // 月球背面示意：灰色半球盘
     const moonMat = new MeshStandardMaterial({
-      color: 0x96969e,
-      metalness: 0.05,
-      roughness: 0.95,
-      emissive: new Color(mats.metal.emissive),
-      emissiveIntensity: 0.04,
+      color: 0x96969e, metalness: 0.05, roughness: 0.95,
+      emissive: new Color(mats.metal.emissive), emissiveIntensity: 0.04,
     });
     materials.push(moonMat);
-    const moon = this._mesh(
-      new SphereGeometry(1.9, 28, 14, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
-      moonMat,
-      0, -1.15, 0
-    );
-    g.add(moon);
-    // 月面陨石坑装饰（平放在月面顶部）
-    [[0.7, 0.5, 0.22], [-0.8, -0.3, 0.3], [0.2, -0.9, 0.16]].forEach(([x, z, r]) => {
-      const crater = this._mesh(new TorusGeometry(r, r * 0.28, 8, 18), moonMat, x, -1.13, z);
+    g.add(this._mesh(new SphereGeometry(1.85, 30, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), moonMat, 0, -1.12, 0));
+    [[0.65, 0.45, 0.2], [-0.75, -0.28, 0.28], [0.18, -0.85, 0.14], [-0.3, 0.7, 0.12], [0.9, -0.5, 0.16]].forEach(([x, z, r]) => {
+      const crater = this._mesh(new TorusGeometry(r, r * 0.25, 8, 16), moonMat, x, -1.1, z);
       crater.rotation.x = Math.PI / 2;
       g.add(crater);
     });
@@ -901,37 +1130,7 @@ class ExhibitManager {
     const updateMaterials = (this._frameTick % 3 === 0);
     const frame = dt * 60;
 
-    // ---- 距离触发式懒加载：玩家靠近时才下载 GLB 模型 ----
-    if (playerPosition) {
-      this._checkAsteroidLazyLoad(playerPosition);
-      for (const rec of this.records.values()) {
-        if (rec.glbLoaded || rec.glbTriggered) continue;
-        if (!rec.data.model_path) continue;
-        const dist = playerPosition.distanceTo(rec.root.position);
-        if (dist < 150) {
-          rec.glbTriggered = true;
-          console.info(`[ExhibitManager] 玩家接近 ${rec.data.name}（${dist.toFixed(0)}u），开始加载 GLB…`);
-          this._tryLoadGltf(
-            rec.data.model_path,
-            rec.modelGroup,
-            rec.materials,
-            rec.data.model_chunks,
-            rec.companionPath,
-            () => {
-              rec.glbLoaded = true;
-              const r = this.records.get(rec.data.id);
-              if (!r) return;
-              const c = r.modelGroup.userData.uiCenter;
-              const topY = r.modelGroup.userData.uiTopY;
-              if (c && isFinite(topY)) {
-                r.labelObj.position.set(c.x, topY + 1.1, c.z);
-              }
-              this._attachRimLight(r, new Color(r.data.glow_color || '#4488FF'));
-            }
-          );
-        }
-      }
-    }
+    // 所有模型均为 Three.js 程序化建模，无需加载 GLB
 
     for (const rec of this.records.values()) {
       // 持续缓慢自转
